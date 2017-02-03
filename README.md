@@ -1,4 +1,4 @@
-[![wercker status](https://app.wercker.com/status/7a99034acc950e922e5ea9f282d786f0/s/master "wercker status")](https://app.wercker.com/project/byKey/7a99034acc950e922e5ea9f282d786f0)
+[![wercker status](https://app.wercker.com/status/36057f66fbef6a03e9d2fde0e082a349/s/master "wercker status")](https://app.wercker.com/project/byKey/36057f66fbef6a03e9d2fde0e082a349)
 
 # HW3 Logistic Regression Getting Started
 
