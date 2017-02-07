@@ -74,18 +74,20 @@ nes52.2000 = nes %>% filter(!is.na(black)) %>%
               filter(year >= 1952 & year <= 2000) %>%
               mutate(female = gender -1,
                      black=race ==2,
-                     vote = presvote == 2)
-recode.52 <- presvote - 1
+                     vote = vote - 1,
+                     presvote = presvote - 1)
 ```
 
 
 7. Fit a separate logistic regression for each year from 1952 to 2000, using the `subset` option in `glm`,  i.e. add `subset=year==1952`.  For each find the 95% Confidence interval for the odds ratio of voting republican for rich compared to poor for each year in the data set from 1952 to 2000.
 
 ```{r}
-rep_ci = c(1, length(unique(nes52.2000$year)))
-for(i in 1:length(unique(nes52.2000$year))) {
-rep_ci[i] <- glm(rep_presvote ~ income, data = nes52.2000, family=binomial(link="logit"), subset=year==nes52.2000$year[i])
-}
+rep.52 <- glm(vote ~ factor(income), data = nes52.2000, family=binomial(link="logit"), subset= year==1952)
+rep.52
+odds.rich <- exp(coef(rep.52)[1] + coef(rep.52)[5]*mean(rep.52$coefficients[5]))
+odds.poor <- exp(coef(rep.52)[1])
+odds.ratio <- odds.rich/odds.poor
+odds.ratio
 ```
 
 
@@ -93,14 +95,14 @@ rep_ci[i] <- glm(rep_presvote ~ income, data = nes52.2000, family=binomial(link=
 8.  Using `ggplot` plot the confidence intervals over time similar to the display in Figure 5.4.
 
 ```{r}
-ggplot(year, rep_ci)
+plot(data = nes52.2000, mapping = aes(unique(year==1952), odds.ratio))
 ```
 
 
 9. Fit a logistic regression using income and year as a factor  with an interaction i.e. `income*factor(year)` to the data from 1952-2000.  Find the log odds ratio for income for each year by combining parameter estimates and show that these are the same as in the respective individual logistic regression models fit separately to the data for each year.
 
 ```{r}
-rep_interact <- glm(rep_presvote~income*factor(year), data = nes52.2000, family=binomial(link="logit"))
+rep_interact <- glm(vote ~ income*factor(year), data = nes52.2000, family=binomial(link="logit"))
 rep_int_ci<- confint(rep_interact)
 rep_interact
 ```
