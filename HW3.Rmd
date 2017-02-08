@@ -20,7 +20,7 @@ We will explore logistic regression with the National Election Study data from G
 
 [*The following code will read in the data and perform some filtering/recoding. Remove this text and modify the  code chunk options so that the code does not appear in the output.*]
 
-```{r data}
+```{r}
 # Data are at http://www.stat.columbia.edu/~gelman/arm/examples/nes
 
 nes <- read.dta("nes5200_processed_voters_realideo.dta",
@@ -45,11 +45,22 @@ nes1992 = nes %>% filter(!is.na(black)) %>%
 1. Summarize the data for 1992 noting which variables have missing data.  Which variables are categorical but are coded as numerically? 
 
 ```{r}
-# add code in this chunk and click green arrow on right to run or use the Run menu.   Add additional chunks using the Insert menu or short-cut keys.  
+summary(nes1992)
+
+apply(is.na(nes1992), 2,sum)
+
+str(nes1992)
+dim(nes1992)
+table(nes1992["weight1"])
+
 ```
+gender,race, educ1
 
 2. Fit the logistic regression  to estimate the probability that an individual would vote Bush (Republican) as a function of income and provide a summary of the model.
 
+```{}
+
+```
 
 3. Obtain a point estimate and create a 95% confidence interval for the odds ratio for voting Republican for a rich person (income category 5) compared to a poor person (income category 1). *Hint this is more than a one unit change; calculate manually and then show how to modify the output from confint*. Provide a sentence interpreting the result.
 
