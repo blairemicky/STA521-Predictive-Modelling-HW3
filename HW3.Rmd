@@ -50,20 +50,29 @@ summary(nes1992)
 apply(is.na(nes1992), 2,sum)
 
 str(nes1992)
+
 dim(nes1992)
-table(nes1992["weight1"])
+
+
 
 ```
 gender,race, educ1
 
 2. Fit the logistic regression  to estimate the probability that an individual would vote Bush (Republican) as a function of income and provide a summary of the model.
 
-```{}
+```{r}
+nes1992["income"]
+
+##not a good model
+glm_income = glm(vote ~ factor(income), data = nes1992, family = "binomial" )
+summary(glm_income)
 
 ```
 
 3. Obtain a point estimate and create a 95% confidence interval for the odds ratio for voting Republican for a rich person (income category 5) compared to a poor person (income category 1). *Hint this is more than a one unit change; calculate manually and then show how to modify the output from confint*. Provide a sentence interpreting the result.
+```{r}
 
+```
 
 
 4.  Obtain fitted probabilities and 95% confidence intervals for the income categories using the `predict` function.  Use `ggplot` to recreate the plots in figure 5.1 of Gelman & Hill.  *write a general function?*
