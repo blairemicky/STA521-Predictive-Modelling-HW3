@@ -43,40 +43,109 @@ nes1992 = nes %>% filter(!is.na(black)) %>%
 
 1. Summarize the data for 1992 noting which variables have missing data.  Which variables are categorical but are coded as numerically? 
 
-```{r}
-summary(nes1992)
+ANSWER: In 1992, information in the form of 57 data fields was gathered from 1179 individuals (5 data fields specify survey details). Several fields have missing data values. The list below shows the names and numbers of missing entries (the data fields without missing entries are not listed). All variables are coded as numerical (except for 'black' and 'vote' which are logicals). However, most variables are categorical, with the exception of the following: the survey weights 'weight1', 'weight2', 'weight3', 'age', 'age_sq' (which is the age variable squared), 'ideo_feel', 'age_10' (=age/10) and 'age_sq_10' (=age^/10).
 
-apply(is.na(nes1992), 2,sum)
-
-str(nes1992)
-
-dim(nes1992)
-
-
-
+```{r, results='asis', echo=T}
+#attach(nes1992)
+a<-(apply(is.na(nes1992),2,sum))
+print(a[a>0])
 ```
-gender,race, educ1
 
-2. Fit the logistic regression  to estimate the probability that an individual would vote Bush (Republican) as a function of income and provide a summary of the model.
+2. Fit the logistic regression to estimate the probability that an individual would vote Bush (Republican) as a function of income and provide a summary of the model.
+
+ANSWER: First, we use the 'glm' function to perform a logistic regression of vote onto income.
+
+```{r, }
+vote.glm1 <-glm(vote ~ income, data=nes1992, family = binomial(link = "logit"))
+summary(vote.glm1)
+```
+
+Based on this, we can estimate (point estimate) the probability that people of different income (1,2,3,4 or 5) vote for Bush. Below are the probabilities for increasing income levels
 
 ```{r}
-nes1992["income"]
-
-##not a good model
-glm_income = glm(vote ~ factor(income), data = nes1992, family = "binomial" )
-summary(glm_income)
-
+inc<-1:5
+w<-exp(vote.glm1$coefficients[1]+vote.glm1$coefficients[2]*inc)
+v<-round(w/(1+w),3)
+names(v)<-c("inc=1", "inc=2",  "inc=3", "inc=4", "inc=5")
+print(v)
 ```
+
 
 3. Obtain a point estimate and create a 95% confidence interval for the odds ratio for voting Republican for a rich person (income category 5) compared to a poor person (income category 1). *Hint this is more than a one unit change; calculate manually and then show how to modify the output from confint*. Provide a sentence interpreting the result.
-```{r}
 
+ANSWER: We have that the odds ratio is equal to $e^{\beta_1 (5-1)}= e^{4\beta_1}$n (the intercept cancels out in the ratio of odds). Hence, we compute the confidence interval for $\beta_1$ and obtain the interval for the odds ratio as follows
+
+```{r}
+a<-confint(vote.glm1)
+or.conf<-exp(4*a[2,])
+suppressMessages(print(or.conf))
 ```
+
+With 95\% confidence, the odds for a rich person (income=5) to vote Republican (relative to the odds for a poor person (inc=1) to vote Republican) are contained in the interval $[2.37, 5.78]$.
 
 
 4.  Obtain fitted probabilities and 95% confidence intervals for the income categories using the `predict` function.  Use `ggplot` to recreate the plots in figure 5.1 of Gelman & Hill.  *write a general function?*
 
+ANSWER: First, use the 'preidict' function to extract the fitted probabilities and the standard errors. Then we use normal theory to obtain the 95\% CI. 
+
+```{r}
+new <- data.frame(income = c(1,2,3,4,5))
+glm_fit<-predict(vote.glm1, newdata = new,  type="response" ,se.fit = TRUE)
+inc<-c(1,2,3,4,5)
+f<-data.frame(Income=inc, Prob=round(glm_fit$fit,3), CI.low=round(glm_fit$fit-1.96*glm_fit$se.fit,3),CI.up=round(glm_fit$fit+1.96*glm_fit$se.fit,3))
+print(xtable(f), comment=F)
+
+```
+
+Next, we reproduce the two plots in Figure 5.1 in Gelman and Hill. For the secon plot, we consulted their code to understand what they did: simulate 20 model coefficients based on the sampling distributions and create the corresponding plots. We repeated this procedure and used ggplot2 to make the corresponding plots.
+
+```{r, echo=T}
+
+
+vote.glm1 <-glm(vote ~ income, data=nes1992, family = binomial(link = "logit"))
+
+# Figure 5.1(a)
+x<-seq(from=-4, to=10, by=.5)
+M<-data.frame(xx=x, prob.smooth=invlogit(coef(vote.glm1)[1]+coef(vote.glm1)[2]*x))
+p1<-ggplot(M, aes(x=xx, y=prob.smooth))
+fig1<-p1+geom_line(aes(y = prob.smooth))+geom_point(data=nes1992, aes(x=income, y=1*vote),size=.25,position = position_jitter(width = 0.25, height = .02))+geom_line(data=subset(M, M$xx>=1 & M$xx<=5), aes(x=xx, y=prob.smooth), size=2)+labs(x="Income", y="Pr(Rebublican vote)")+scale_x_continuous(breaks=c(1,2,3,4,5))
+
+# Figure 5.1(b)
+sims<-sim(vote.glm1)
+x<-seq(from=1, to=5, by=.05)
+M<-data.frame(xx=x, prob.smooth=invlogit(coef(vote.glm1)[1]+coef(vote.glm1)[2]*x))
+fig2<-ggplot(M, aes(x=xx, y=prob.smooth))+geom_line(aes(y = prob.smooth))+geom_point(data=nes1992, aes(x=income, y=1*vote),size=.25,position = position_jitter(width = 0.25, height = .02))+labs(x="Income", y="Pr(Rebublican vote)")+scale_x_continuous(breaks=c(1,2,3,4,5))
+for(q in 1:20){
+  M2<-data.frame(xx=x, prob.smooth=invlogit(sims@coef[q,1]+sims@coef[q,2]*x))
+
+  fig2<-fig2+geom_line(data=M2,aes(y = prob.smooth), size=.25, linetype=3)
+}
+
+par(mfrow=c(2,2)) 
+plot(fig1)
+
+plot(fig2)
+
+```
+
+
+
 5.  What does the residual deviance or any diagnostic plots suggest about the model?  (provide code for p-values and output and plots) 
+
+ANSWER: coming soon.
+
+```{r}
+vote.glm0 <-glm(vote ~ 1 ,data=nes1992, family = binomial(link = "logit"))
+vote.glm1$deviance
+pchisq(vote.glm1$deviance, vote.glm1$df.residual, lower.tail = F)
+anova(vote.glm0, vote.glm1, test="Chi")
+anova(vote.glm1, test="Chi")
+par(mfrow=c(2,2)) 
+
+plot(vote.glm1)
+
+```
+
 
 
 6. Create a new data set by the filtering and mutate steps above, but now include years between 1952 and 2000.
