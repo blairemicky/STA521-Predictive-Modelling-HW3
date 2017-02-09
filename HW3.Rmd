@@ -38,8 +38,7 @@ nes1992 = nes %>% filter(!is.na(black)) %>%
               filter(year == 1992) %>%
               mutate(female = gender -1,
                      black=race ==2,
-# recode vote so that vote = 1 corresponds to a vote for Bush, and vote=0 is a vote for Clinton, where votes for Ross Perot were removed earlier                     
-                     vote = presvote == 2)
+                     vote = vote - 1)
 ```
 
 1. Summarize the data for 1992 noting which variables have missing data.  Which variables are categorical but are coded as numerically? 
@@ -70,24 +69,25 @@ nes52.2000 = nes %>% filter(!is.na(black)) %>%
               filter(!is.na(state)) %>%
               filter(!is.na(income)) %>%
               filter(presvote %in% 1:2) %>% 
-# limit to year 1992 to 2000 and add new variables
               filter(year >= 1952 & year <= 2000) %>%
               mutate(female = gender -1,
                      black=race ==2,
-                     vote = vote - 1,
-                     presvote = presvote - 1)
+                     vote = presvote == 2)
 ```
 
 
 7. Fit a separate logistic regression for each year from 1952 to 2000, using the `subset` option in `glm`,  i.e. add `subset=year==1952`.  For each find the 95% Confidence interval for the odds ratio of voting republican for rich compared to poor for each year in the data set from 1952 to 2000.
 
 ```{r}
-rep.52 <- glm(vote ~ factor(income), data = nes52.2000, family=binomial(link="logit"), subset= year==1952)
-rep.52
-odds.rich <- exp(coef(rep.52)[1] + coef(rep.52)[5]*mean(rep.52$coefficients[5]))
-odds.poor <- exp(coef(rep.52)[1])
-odds.ratio <- odds.rich/odds.poor
-odds.ratio
+yr <- unique(year)
+odds.ci <- NULL
+for (i in 1:length(yr)) {
+rep <- glm(vote ~ income, data=nes52.2000, family=binomial(link="logit"), subset=year==yr[i])
+rep.ci <- suppressMessages(confint(rep))
+odds <- exp(4*rep.ci[2,])
+odds.ci <- rbind(odds.ci, odds, deparse.level = 0)
+}
+odds.ci
 ```
 
 
@@ -95,24 +95,37 @@ odds.ratio
 8.  Using `ggplot` plot the confidence intervals over time similar to the display in Figure 5.4.
 
 ```{r}
-plot(data = nes52.2000, mapping = aes(unique(year==1952), odds.ratio))
+plot(rep(yr, 2), odds.ci, xlim=c(1952,2000), ylab="Confidence Intervals", xlab="Year", pch = 20, col="firebrick")
+for (i in 1:length(yr)){
+  lines(rep(yr[i],2), c(odds.ci[i,1], odds.ci[i,2]), col="firebrick")
+}
 ```
-
+*Used code from Gelman & Hill book on Figure 5.4 as guidance.
 
 9. Fit a logistic regression using income and year as a factor  with an interaction i.e. `income*factor(year)` to the data from 1952-2000.  Find the log odds ratio for income for each year by combining parameter estimates and show that these are the same as in the respective individual logistic regression models fit separately to the data for each year.
 
 ```{r}
+inc.est <- NULL
 rep_interact <- glm(vote ~ income*factor(year), data = nes52.2000, family=binomial(link="logit"))
-rep_int_ci<- confint(rep_interact)
-rep_interact
+for (i in 1:length(yr)) {
+if (i==1) {
+  inc <- rep_interact$coefficients[2]
+} else {
+inc <- rep_interact$coefficients[2] + rep_interact$coefficients[i + 13]
+}
+inc.est <- rbind(inc.est, inc, deparse.level = 0)
+}
+inc.est
 ```
 
 
 10.  Create a plot of fitted probabilities and confidence intervals as in question 4, with curves for all years in the same plot.
 
 ```{r}
-ggplot(year, rep_interact, aes(year, rep_interact))
-curve(rep_interact)
+plot(x = rep(inc.est, 2), y = odds.ci, pch=20, col="darkblue")
+for (i in 1:length(yr)){
+  lines(rep(inc.est[i],2), c(odds.ci[i,1], odds.ci[i,2]), lwd=.5, col="royalblue")
+}
 ```
 
 
