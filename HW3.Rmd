@@ -100,11 +100,14 @@ nes52.2000 = nes %>% filter(!is.na(black)) %>%
 
 ```{r}
 yr <- unique(year)
+inc.indiv <- NULL
 odds.ci <- NULL
 for (i in 1:length(yr)) {
 rep <- glm(vote ~ income, data=nes52.2000, family=binomial(link="logit"), subset=year==yr[i])
+inc <- rep$coefficients[2]
 rep.ci <- suppressMessages(confint(rep))
 odds <- exp(4*rep.ci[2,])
+inc.indiv <- rbind(inc.indiv, inc, deparse.level = 0)
 odds.ci <- rbind(odds.ci, odds, deparse.level = 0)
 }
 odds.ci
@@ -125,19 +128,20 @@ for (i in 1:length(yr)){
 9. Fit a logistic regression using income and year as a factor  with an interaction i.e. `income*factor(year)` to the data from 1952-2000.  Find the log odds ratio for income for each year by combining parameter estimates and show that these are the same as in the respective individual logistic regression models fit separately to the data for each year.
 
 ```{r}
-inc.est <- NULL
+inc.int <- NULL
 rep_interact <- glm(vote ~ income*factor(year), data = nes52.2000, family=binomial(link="logit"))
 for (i in 1:length(yr)) {
 if (i==1) {
-  inc <- rep_interact$coefficients[2]
+  inc.i <- rep_interact$coefficients[2]
 } else {
-inc <- rep_interact$coefficients[2] + rep_interact$coefficients[i + 13]
+inc.i <- rep_interact$coefficients[2] + rep_interact$coefficients[i + 13]
 }
-inc.est <- rbind(inc.est, inc, deparse.level = 0)
+inc.int <- rbind(inc.int, inc.i, deparse.level = 0)
 }
-inc.est
+inc.int
+inc.indiv
 ```
-
+As shown above, the log odds ratios for income are exactly the same generated from both processes (the individual regression coefficients were generated in #7).
 
 10.  Create a plot of fitted probabilities and confidence intervals as in question 4, with curves for all years in the same plot.
 
