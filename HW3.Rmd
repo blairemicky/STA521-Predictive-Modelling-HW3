@@ -340,9 +340,14 @@ anova(glm_1992clean_al1,glm_1992clean)
 
 15.  Compute the error rate of your model (see GH page 99) and compare it to the error rate of the null model.  We can define a function for the error rate as:
 ```{r error.rate, include=FALSE}
+true = nes1992_clean$vote
+pred = predict(glm_1992clean,type = "response")
+
 error.rate = function(pred, true) {
   mean((pred > .5 & true == 0) | (pred < .5 & true == 1))
 }
+
+error.rate(pred, true)
 ```
 
 16.  For your chosen model, discuss and compare the importance of each input variable in the prediction.   Provide a neatly formatted table of odds ratios  and 95\% confidence intervals.
