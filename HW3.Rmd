@@ -133,20 +133,22 @@ plot(fig2)
 
 5.  What does the residual deviance or any diagnostic plots suggest about the model?  (provide code for p-values and output and plots) 
 
-ANSWER: First we compute the residual deviance, defined as the change in deviance between the fitted model and the saturated model. 
+ANSWER: First we compute the residual deviance, defined as the change in deviance between the fitted model and the saturated model, and use the $\chi^2$ statistic to check whether the model is satisfactorily.
 
 ```{r}
-vote.glm0 <-glm(vote ~ 1 ,data=nes1992, family = binomial(link = "logit"))
-vote.glm1$deviance
+print(vote.glm1$deviance)
 pchisq(vote.glm1$deviance, vote.glm1$df.residual, lower.tail = F)
-anova(vote.glm0, vote.glm1, test="Chi")
-anova(vote.glm1, test="Chi")
-par(mfrow=c(2,2)) 
-
-plot(vote.glm1)
 
 ```
 
+The very high residual deviance (and corresponding small p-value) implies that the model is not satisfactory. Next, we consider the summary plots
+
+```{r}
+par(mfrow=c(2,2)) 
+plot(vote.glm1)
+
+```
+Interpretation: TBD
 
 
 6. Create a new data set by the filtering and mutate steps above, but now include years between 1952 and 2000.
@@ -169,25 +171,18 @@ nes52.2000 = nes %>% filter(!is.na(black)) %>%
 7. Fit a separate logistic regression for each year from 1952 to 2000, using the `subset` option in `glm`,  i.e. add `subset=year==1952`.  For each find the 95% Confidence interval for the odds ratio of voting republican for rich compared to poor for each year in the data set from 1952 to 2000.
 
 ```{r}
-<<<<<<< HEAD
 attach(nes52.2000)
 yr <- unique(year)
 intercept.store <- NULL
 inc.indiv <- NULL
 odds.ci <- NULL
 x.store <- NULL
-=======
 
 ## MDR: new version that  avoids growing arrays
 yr <- unique(nes52.2000$year)
-<<<<<<< HEAD
 OR<-data.frame(year=yr, est=numeric(length(yr)), CI.lwr=numeric(length(yr)),CI.upr=numeric(length(yr)) )
 inc.indiv<-rep(0,length(yr)) # used for question 9
 intercept.store<-rep(0,length(yr)) # used for question 9
-=======
-OR<-data.frame(est=numeric(length(yr)), CI.lwr=numeric(length(yr)),CI.upr=numeric(length(yr)) )
->>>>>>> cb6a8ad5a35c9d18a70a944f547dbe06617185ca
->>>>>>> 2f707592a9e256813179e2378e0d41ba903de503
 for (i in 1:length(yr)) {
 rep <- glm(vote ~ income, data=nes52.2000, family=binomial(link="logit"), subset=year==yr[i])
 OR$est[i]<-exp(4*rep$coefficients[2])
@@ -195,7 +190,6 @@ rep.ci <- suppressMessages(confint(rep))
 OR[i,3:4] <- exp(4*rep.ci[2,])
 inc.indiv[i]<-rep$coefficients[2]
 intercept.store[i]<-rep$coefficients[1]
-
 }
 xtable(round(OR,2))
 
