@@ -168,6 +168,7 @@ nes52.2000 = nes %>% filter(!is.na(black)) %>%
 7. Fit a separate logistic regression for each year from 1952 to 2000, using the `subset` option in `glm`,  i.e. add `subset=year==1952`.  For each find the 95% Confidence interval for the odds ratio of voting republican for rich compared to poor for each year in the data set from 1952 to 2000.
 
 ```{r}
+attach(nes52.2000)
 yr <- unique(year)
 intercept.store <- NULL
 inc.indiv <- NULL
@@ -269,7 +270,7 @@ levels(nes1992_clean$ideo) = list("liberal" =1 , "moderate" = 3, "conservative" 
 ##delete row corresponding to apolitical
 nes1992_clean = nes1992_clean[-126,]
 
-glm_1992clean = glm(vote~  gender + race + educ1 + partyid3 + ideo + race:gender + gender:partyid3, 
+glm_1992clean = glm(vote~  income + gender + race + educ1 + partyid3 + ideo + race:gender + gender:partyid3, 
                            data = nes1992_clean, 
                            family = binomial(link = "logit"),
                            maxit = 100)
@@ -284,6 +285,8 @@ pred = predict(glm_1992clean,type = "link")
 ##deviance residuals: signed square roots of the ith observation to the overall deviance
 res = resid(glm_1992clean)
 
+binnedplot(pred, res)
+
 par(mfrow = c(1,2))
 ##binned plot residual vs age
 age_flat = as.numeric(data.matrix(nes1992_clean["age"]))
@@ -296,7 +299,14 @@ binnedplot(state_flat, res, xlab = "state")
 
 14.  Evaluate and compare the different models you fit.  Consider coefficient estimates (are they stable across models) and standard errors (any indications of identifiability problems), residual plots and deviances.
 ```{r}
+glm_1992clean_al1 = glm(vote~  income + gender + race + educ1 + partyid3 + race:gender + gender:partyid3, 
+                           data = nes1992_clean, 
+                           family = binomial(link = "logit"),
+                           maxit = 100)
 
+summary(glm_1992clean_al1)
+
+anova(glm_1992clean_al1,glm_1992clean)
 ```
  
 
@@ -321,10 +331,12 @@ error.rate = function(pred, true) {
 ```{r}
 
 ```
+
 19. For any of above variables, suggest possible reasons why they may be missing.
 ```{r}
 
 ```
+
 20.  Rerun your selected model and create a table of parameter estimates and confidence intervals for the odds ratios.  You should have an additional coefficient for any categorical variable with missing data.   Comment on any changes in results for the model including the missing data and the previous one that used only complete data.
 ```{r}
 
