@@ -172,9 +172,10 @@ nes52.2000 = nes %>% filter(!is.na(black)) %>%
 
 ## MDR: new version that  avoids growing arrays
 yr <- unique(nes52.2000$year)
-OR.ci<-data.frame(ci.lwr=numeric(length(yr)),ci.upr=numeric(length(yr)) )
+OR<-data.frame(est=numeric(length(yr)), CI.lwr=numeric(length(yr)),CI.upr=numeric(length(yr)) )
 for (i in 1:length(yr)) {
 rep <- glm(vote ~ income, data=nes52.2000, family=binomial(link="logit"), subset=year==yr[i])
+
 rep.ci <- suppressMessages(confint(rep))
 OR.ci[i,] <- exp(4*rep.ci[2,])
 }
