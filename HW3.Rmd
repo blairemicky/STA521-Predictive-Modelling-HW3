@@ -274,7 +274,8 @@ nes1992_clean = nes1992 %>% filter(year == 1992) %>%
                             filter(!is.na(race)) %>% 
                             filter(!is.na(educ1)) %>% 
                             filter(!is.na(partyid3)) %>% 
-                            filter(!is.na(ideo))
+                            filter(!is.na(ideo)) %>% 
+                            filter(!is.na(ideo_feel))
                             
 ##factor gender
 nes1992_clean$gender = factor(nes1992_clean$gender)
@@ -298,7 +299,12 @@ levels(nes1992_clean$ideo) = list("liberal" =1 , "moderate" = 3, "conservative" 
 ##delete row corresponding to apolitical
 nes1992_clean = nes1992_clean[-126,]
 
-glm_1992clean = glm(vote~  income + gender + race + educ1 + partyid3 + ideo + race:gender + gender:partyid3, 
+glm_1992_ori = glm(vote~  income + gender + race + educ1 + partyid3 + ideo,
+                          data = nes1992_clean,
+                          family = binomial(link = "logit"),
+                          maxit = 100)
+
+glm_1992_inr = glm(vote~  income + gender + race + educ1 + partyid3 + ideo + race:gender + gender:partyid3, 
                            data = nes1992_clean, 
                            family = binomial(link = "logit"),
                            maxit = 100)
@@ -309,9 +315,9 @@ summary(glm_1992clean)
 13.  Plot binned residuals using the function `binnedplot` from package `arm` versus some of the additional predictors in the 1992 dataframe.  Are there any suggestions that the mean or distribution of residuals is different across the levels of the other predictors and that they should be added to the model?  (Provide plots and any other summaries to explain).   
 ```{r}
 ##log odds
-pred = predict(glm_1992clean,type = "link")
+pred = predict(glm_1992_inr,type = "link")
 ##deviance residuals: signed square roots of the ith observation to the overall deviance
-res = resid(glm_1992clean)
+res = resid(glm_1992_inr)
 
 binnedplot(pred, res)
 
@@ -323,25 +329,35 @@ binnedplot(age_flat, res, xlab = "age")
 ##binned plot residual vs state
 state_flat = as.numeric(data.matrix(nes1992_clean["state"]))
 binnedplot(state_flat, res, xlab = "state")
+
+
+ideo_feel_flat = as.numeric(data.matrix(nes1992_clean["ideo_feel"]))
+binnedplot(ideo_feel_flat, res, xlab = "ideo_feel")
+
 ```
 
 14.  Evaluate and compare the different models you fit.  Consider coefficient estimates (are they stable across models) and standard errors (any indications of identifiability problems), residual plots and deviances.
 ```{r}
-glm_1992clean_al1 = glm(vote~  income + gender + race + educ1 + partyid3 + race:gender + gender:partyid3, 
+glm_1992_rmideo = glm(vote~  income + gender + race + educ1 + partyid3 + race:gender + gender:partyid3, 
                            data = nes1992_clean, 
                            family = binomial(link = "logit"),
                            maxit = 100)
 
-summary(glm_1992clean_al1)
+glm_1992_idf = glm(vote~  income + gender + race + educ1 + partyid3 + ideo + ideo_feel + race:gender + gender:partyid3, 
+                           data = nes1992_clean, 
+                           family = binomial(link = "logit"),
+                           maxit = 100)
 
-anova(glm_1992clean_al1,glm_1992clean)
+summary(glm_1992_rmideo)
+
+anova(glm_1992_inr, glm_1992_idf,test = "Chisq")
 ```
  
 
 15.  Compute the error rate of your model (see GH page 99) and compare it to the error rate of the null model.  We can define a function for the error rate as:
 ```{r error.rate, include=FALSE}
 true = nes1992_clean$vote
-pred = predict(glm_1992clean,type = "response")
+pred = predict(glm_1992_idf,type = "response")
 
 error.rate = function(pred, true) {
   mean((pred > .5 & true == 0) | (pred < .5 & true == 1))
