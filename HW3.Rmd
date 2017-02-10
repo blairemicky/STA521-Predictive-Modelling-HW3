@@ -272,7 +272,19 @@ summary(glm_1992clean)
 
 13.  Plot binned residuals using the function `binnedplot` from package `arm` versus some of the additional predictors in the 1992 dataframe.  Are there any suggestions that the mean or distribution of residuals is different across the levels of the other predictors and that they should be added to the model?  (Provide plots and any other summaries to explain).   
 ```{r}
+##log odds
+pred = predict(glm_1992clean,type = "link")
+##deviance residuals: signed square roots of the ith observation to the overall deviance
+res = resid(glm_1992clean)
 
+par(mfrow = c(1,2))
+##binned plot residual vs age
+age_flat = as.numeric(data.matrix(nes1992_clean["age"]))
+binnedplot(age_flat, res, xlab = "age")
+
+##binned plot residual vs state
+state_flat = as.numeric(data.matrix(nes1992_clean["state"]))
+binnedplot(state_flat, res, xlab = "state")
 ```
 
 14.  Evaluate and compare the different models you fit.  Consider coefficient estimates (are they stable across models) and standard errors (any indications of identifiability problems), residual plots and deviances.
