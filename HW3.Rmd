@@ -98,7 +98,7 @@ print(xtable(f), comment=F)
 
 ```
 
-Next, we reproduce the two plots in Figure 5.1 in Gelman and Hill. For the secon plot, we consulted their code to understand what they did: simulate 20 model coefficients based on the sampling distributions and create the corresponding plots. We repeated this procedure and used ggplot2 to make the corresponding plots.
+Next, we reproduce the two plots in Figure 5.1 in Gelman and Hill. For the second plot, we consulted their code to understand what they did: simulate 20 model coefficients based on the sampling distributions and create the corresponding plots. We repeated this procedure and used ggplot2 to make the corresponding plots.
 
 ```{r, echo=T}
 
@@ -296,7 +296,7 @@ nes1992_clean = nes1992 %>% filter(year == 1992) %>%
                             filter(!is.na(partyid3)) %>% 
                             filter(!is.na(ideo)) %>% 
                             filter(!is.na(ideo_feel))
-                            
+ 
 ##factor gender
 nes1992_clean$gender = factor(nes1992_clean$gender)
 levels(nes1992_clean$gender) = list("male" = 1, "female" = 2)
@@ -308,7 +308,7 @@ nes1992_clean$educ1 = factor(nes1992_clean$educ1)
 levels(nes1992_clean$educ1) = list("no high school" = 1, "high school graduate" = 2, "some college" = 3, "college graduate" = 4)
 ##factor party identification
 nes1992_clean$partyid3 = factor(nes1992_clean$partyid3)
-levels(nes1992_clean$partyid3) = list("democraets" = 1, "independents" = 2, "republicans" = 3, "apolitical" = 9)
+levels(nes1992_clean$partyid3) = list("democraets" = 1, "independents" = 2, "republicans" = 3)
 ##political ideology
 nes1992_clean$ideo = factor(nes1992_clean$ideo)
 levels(nes1992_clean$ideo) = list("liberal" =1 , "moderate" = 3, "conservative" = 5)
@@ -316,20 +316,19 @@ levels(nes1992_clean$ideo) = list("liberal" =1 , "moderate" = 3, "conservative" 
 
 12.  Fit a logistic regression model predicting support for Bush given the the variables above and income as predictors and also consider interactions among the predictors. 
 ```{r}
-##delete row corresponding to apolitical
-nes1992_clean = nes1992_clean[-126,]
 
+
+##baseline model
 glm_1992_ori = glm(vote~  income + gender + race + educ1 + partyid3 + ideo,
                           data = nes1992_clean,
                           family = binomial(link = "logit"),
                           maxit = 100)
-
+##add interaction
 glm_1992_inr = glm(vote~  income + gender + race + educ1 + partyid3 + ideo + race:gender + gender:partyid3, 
                            data = nes1992_clean, 
                            family = binomial(link = "logit"),
                            maxit = 100)
 
-summary(glm_1992clean)
 ```
 
 13.  Plot binned residuals using the function `binnedplot` from package `arm` versus some of the additional predictors in the 1992 dataframe.  Are there any suggestions that the mean or distribution of residuals is different across the levels of the other predictors and that they should be added to the model?  (Provide plots and any other summaries to explain).   
@@ -358,19 +357,13 @@ binnedplot(ideo_feel_flat, res, xlab = "ideo_feel")
 
 14.  Evaluate and compare the different models you fit.  Consider coefficient estimates (are they stable across models) and standard errors (any indications of identifiability problems), residual plots and deviances.
 ```{r}
-glm_1992_rmideo = glm(vote~  income + gender + race + educ1 + partyid3 + race:gender + gender:partyid3, 
-                           data = nes1992_clean, 
-                           family = binomial(link = "logit"),
-                           maxit = 100)
-
+##model adding ideo_feel
 glm_1992_idf = glm(vote~  income + gender + race + educ1 + partyid3 + ideo + ideo_feel + race:gender + gender:partyid3, 
                            data = nes1992_clean, 
                            family = binomial(link = "logit"),
                            maxit = 100)
 
-summary(glm_1992_rmideo)
-
-anova(glm_1992_inr, glm_1992_idf,test = "Chisq")
+anova(glm_1992_ori,glm_1992_inr, glm_1992_idf,test = "Chisq")
 ```
  
 
@@ -388,21 +381,70 @@ error.rate(pred, true)
 
 16.  For your chosen model, discuss and compare the importance of each input variable in the prediction.   Provide a neatly formatted table of odds ratios  and 95\% confidence intervals.
 ```{r}
+glm_1992_idf = glm(vote~  income + gender + race + educ1 + partyid3 + ideo + ideo_feel + race:gender + gender:partyid3, 
+                           data = nes1992_clean, 
+                           family = binomial(link = "logit"),
+                           maxit = 100)
 
+summary(glm_1992_idf)
+
+
+ci = exp(cbind(coef(glm_1992_idf),confint(glm_1992_idf)))
+suppressMessages(print(ci))
+colnames(ci) = c("RR", "2.5", "97.5")
+print(xtable(round(ci, 4)), comment=F)
 ```
 
 17.  Provide a paragraph summarizing your findings and interpreting key coefficients (providing ranges of supporting values from above) in terms of the odds of voting for Bush.  Attempt to write this at a level that readers of the New York Times Upshot column could understand.   
 ```{r}
-
+sum(is.na(nes["presvote"]))
 ```
 
 18.  In the above analysis, we removed missing data.  Repeat the data cleaning steps, but remove only the rows where the response variable, `presvote` is missing.  Recode all of the predictors (including income) so that there is a level that is 'missing' for any NA's for each variable.  How many observations are there now compared to the complete data?
-```{r}
 
+
+
+
+
+
+11.  Return to the 1992 year data. Filter out rows of `nes1992` with NA's in the variables below and  recode as factors using the levels in parentheses:
+    + gender (1 = "male", 2 = "female"), 
+    + race (1 = "white", 2 = "black", 3 = "asian", 4 = "native american", 5 = "hispanic", 7 = "other"), 
+    + education ( use `educ1` with levels 1 = "no high school", 2 = "high school graduate", 3 = "some college", 4 = "college graduate"), 
+    + party identification (`partyid3` with levels 1= "democraets", 2 = "independents", 3 = "republicans", 4 = "apolitical" , and 
+    + political ideology (`ideo` 1 = "liberal", 2 ="moderate", 3 = "conservative") 
+```{r}
+# Data cleaning
+# remove NA's for key variables first
+nes1992_na = nes %>% filter(presvote %in% 1:2) %>% 
+                     filter(year == 1992) %>%
+                     mutate(female = gender -1,
+                            black=race ==2,
+                            vote = presvote ==2)
+
+
+
+##factor gender
+nes1992_na$gender = factor(nes1992_na$gender)
+levels(nes1992_na$gender) = list("male" = 1, "female" = 2)
+##factor race
+nes1992_na$race = factor(nes1992_clean$race)
+levels(nes1992_clean$race) = list("white" = 1, "black" = 2, "asian" = 3, "nativea merican" = 4, "hispanic" = 5)
+##factor education
+nes1992_clean$educ1 = factor(nes1992_clean$educ1)
+levels(nes1992_clean$educ1) = list("no high school" = 1, "high school graduate" = 2, "some college" = 3, "college graduate" = 4)
+##factor party identification
+nes1992_clean$partyid3 = factor(nes1992_clean$partyid3)
+levels(nes1992_clean$partyid3) = list("democraets" = 1, "independents" = 2, "republicans" = 3)
+##political ideology
+nes1992_clean$ideo = factor(nes1992_clean$ideo)
+levels(nes1992_clean$ideo) = list("liberal" =1 , "moderate" = 3, "conservative" = 5)
 ```
 
 19. For any of above variables, suggest possible reasons why they may be missing.
 ```{r}
+
+
 
 ```
 
