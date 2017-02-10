@@ -148,7 +148,7 @@ par(mfrow=c(2,2))
 plot(vote.glm1)
 
 ```
-Interpretation: TBD
+We need to proceed with caution in interpreting these plots. The residuals vs fitted pot does not look alarming per se, the Q-Q plot is off the line for normality, but this doesn't mean there is an issue a priori (there are not very heavy tails).  Heteroscidacity is to be expected in a logistic regression model. The leverage plot does not reveal any large leverage points, and the Pearson residuals are not excessively large. None of the points exceeds Cook's distance of 0.5 which is reassuring. 
 
 
 6. Create a new data set by the filtering and mutate steps above, but now include years between 1952 and 2000.
