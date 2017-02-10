@@ -12,6 +12,7 @@ library(foreign)
 library(magrittr)
 library(dplyr)
 library(ggplot2)
+library(xtable)
 # add other libraries
 ```
 
@@ -168,25 +169,43 @@ nes52.2000 = nes %>% filter(!is.na(black)) %>%
 7. Fit a separate logistic regression for each year from 1952 to 2000, using the `subset` option in `glm`,  i.e. add `subset=year==1952`.  For each find the 95% Confidence interval for the odds ratio of voting republican for rich compared to poor for each year in the data set from 1952 to 2000.
 
 ```{r}
-yr <- unique(year)
-intercept.store <- NULL
-inc.indiv <- NULL
-odds.ci <- NULL
-x.store <- NULL
+
+## MDR: new version that  avoids growing arrays
+yr <- unique(nes52.2000$year)
+OR.ci<-data.frame(ci.lwr=numeric(length(yr)),ci.upr=numeric(length(yr)) )
 for (i in 1:length(yr)) {
 rep <- glm(vote ~ income, data=nes52.2000, family=binomial(link="logit"), subset=year==yr[i])
-intercept <- rep$coefficients[1]
-inc <- rep$coefficients[2]
 rep.ci <- suppressMessages(confint(rep))
-odds <- exp(4*rep.ci[2,])
-x <- model.matrix(rep)
-x.store <- rbind(x.store, x, deparse.level = 0)
-intercept.store <- rbind(intercept.store, intercept)
-inc.indiv <- rbind(inc.indiv, inc, deparse.level = 0)
-odds.ci <- rbind(odds.ci, odds, deparse.level = 0)
+OR.ci[i,] <- exp(4*rep.ci[2,])
 }
-odds.ci
+print(OR.ci)
+
+
+# old version:
+# yr <- unique(year)
+# intercept.store <- NULL
+# inc.indiv <- NULL
+# odds.ci <- NULL
+# x.store <- NULL
+# for (i in 1:length(yr)) {
+# rep <- glm(vote ~ income, data=nes52.2000, family=binomial(link="logit"), subset=year==yr[i])
+# intercept <- rep$coefficients[1]
+# inc <- rep$coefficients[2]
+# rep.ci <- suppressMessages(confint(rep))
+# odds <- exp(4*rep.ci[2,])
+# x <- model.matrix(rep)
+# x.store <- rbind(x.store, x, deparse.level = 0)
+# intercept.store <- rbind(intercept.store, intercept)
+# inc.indiv <- rbind(inc.indiv, inc, deparse.level = 0)
+# odds.ci <- rbind(odds.ci, odds, deparse.level = 0)
+# }
+# odds.ci
+
 ```
+
+
+
+
 
 
 
