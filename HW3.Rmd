@@ -133,7 +133,7 @@ plot(fig2)
 
 5.  What does the residual deviance or any diagnostic plots suggest about the model?  (provide code for p-values and output and plots) 
 
-ANSWER: coming soon.
+ANSWER: First we compute the residual deviance, defined as the change in deviance between the fitted model and the saturated model. 
 
 ```{r}
 vote.glm0 <-glm(vote ~ 1 ,data=nes1992, family = binomial(link = "logit"))
@@ -172,15 +172,19 @@ nes52.2000 = nes %>% filter(!is.na(black)) %>%
 
 ## MDR: new version that  avoids growing arrays
 yr <- unique(nes52.2000$year)
-OR<-data.frame(est=numeric(length(yr)), CI.lwr=numeric(length(yr)),CI.upr=numeric(length(yr)) )
+OR<-data.frame(year=yr, est=numeric(length(yr)), CI.lwr=numeric(length(yr)),CI.upr=numeric(length(yr)) )
+inc.indiv<-rep(0,length(yr)) # used for question 9
+intercept.store<-rep(0,length(yr)) # used for question 9
 for (i in 1:length(yr)) {
 rep <- glm(vote ~ income, data=nes52.2000, family=binomial(link="logit"), subset=year==yr[i])
-
+OR$est[i]<-exp(4*rep$coefficients[2])
 rep.ci <- suppressMessages(confint(rep))
-OR.ci[i,] <- exp(4*rep.ci[2,])
-}
-print(OR.ci)
+OR[i,3:4] <- exp(4*rep.ci[2,])
+inc.indiv[i]<-rep$coefficients[2]
+intercept.store[i]<-rep$coefficients[1]
 
+}
+xtable(round(OR,2))
 
 # old version:
 # yr <- unique(year)
@@ -208,22 +212,25 @@ print(OR.ci)
 
 
 
-
-
 8.  Using `ggplot` plot the confidence intervals over time similar to the display in Figure 5.4.
 
 ```{r}
-plot(rep(yr, 2), odds.ci, xlim=c(1952,2000), ylab="Confidence Intervals", xlab="Year", pch = 20, col="firebrick")
-for (i in 1:length(yr)){
-  lines(rep(yr[i],2), c(odds.ci[i,1], odds.ci[i,2]), col="firebrick")
-}
+# use ggplot2
+p<-ggplot(OR, aes(x=year, y=est)) +geom_point()+  geom_errorbar(aes(ymin=CI.lwr, ymax=CI.upr), width=.1)
+p<-p+xlab("Year") + ylab("Odds ratio (95%-CI)")+ylim(0,10) + geom_hline(yintercept=c(1), linetype="dotted")
+plot(p)
+
+# old version
+# plot(rep(yr, 2), odds.ci, xlim=c(1952,2000), ylab="Confidence Intervals", xlab="Year", pch = 20, col="firebrick")
+# for (i in 1:length(yr)){
+#   lines(rep(yr[i],2), c(odds.ci[i,1], odds.ci[i,2]), col="firebrick")
+# }
 ```
-*Used code from Gelman & Hill book on Figure 5.4 as guidance.
 
 9. Fit a logistic regression using income and year as a factor  with an interaction i.e. `income*factor(year)` to the data from 1952-2000.  Find the log odds ratio for income for each year by combining parameter estimates and show that these are the same as in the respective individual logistic regression models fit separately to the data for each year.
 
 ```{r}
-inc.int <- NULL
+inc.int <- rep(0,length(unique(nes52.2000$year)))
 rep_interact <- glm(vote ~ income*factor(year), data = nes52.2000, family=binomial(link="logit"))
 for (i in 1:length(yr)) {
 if (i==1) {
@@ -231,10 +238,9 @@ if (i==1) {
 } else {
 inc.i <- rep_interact$coefficients[2] + rep_interact$coefficients[i + 13]
 }
-inc.int <- rbind(inc.int, inc.i, deparse.level = 0)
+inc.int[i]<-inc.i;
 }
-inc.int
-inc.indiv
+cbind(inc.int,inc.indiv)
 ```
 As shown above, the log odds ratios for income are exactly the same generated from both processes (the individual regression coefficients were generated in #7).
 
