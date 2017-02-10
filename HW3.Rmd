@@ -171,12 +171,6 @@ nes52.2000 = nes %>% filter(!is.na(black)) %>%
 7. Fit a separate logistic regression for each year from 1952 to 2000, using the `subset` option in `glm`,  i.e. add `subset=year==1952`.  For each find the 95% Confidence interval for the odds ratio of voting republican for rich compared to poor for each year in the data set from 1952 to 2000.
 
 ```{r}
-attach(nes52.2000)
-yr <- unique(year)
-intercept.store <- NULL
-inc.indiv <- NULL
-odds.ci <- NULL
-x.store <- NULL
 
 ## MDR: new version that  avoids growing arrays
 yr <- unique(nes52.2000$year)
