@@ -259,7 +259,10 @@ levels(nes1992_clean$ideo) = list("liberal" =1 , "moderate" = 3, "conservative" 
 
 12.  Fit a logistic regression model predicting support for Bush given the the variables above and income as predictors and also consider interactions among the predictors. 
 ```{r}
-glm_1992clean = glm(vote~  gender + race + educ1 + partyid3 + ideo, 
+##delete row corresponding to apolitical
+nes1992_clean = nes1992_clean[-126,]
+
+glm_1992clean = glm(vote~  gender + race + educ1 + partyid3 + ideo + race:gender + gender:partyid3, 
                            data = nes1992_clean, 
                            family = binomial(link = "logit"),
                            maxit = 100)
