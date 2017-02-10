@@ -230,17 +230,47 @@ curve (invlogit(rep$coef[1] + rep$coef[2]*x), 1, 5, ylim=c(-.01,1.01),
     + gender (1 = "male", 2 = "female"), 
     + race (1 = "white", 2 = "black", 3 = "asian", 4 = "native american", 5 = "hispanic", 7 = "other"), 
     + education ( use `educ1` with levels 1 = "no high school", 2 = "high school graduate", 3 = "some college", 4 = "college graduate"), 
-    + party identification (`partyid3` with levels 1= "democrats", 2 = "independents", 3 = "republicans", 4 = "apolitical" , and 
+    + party identification (`partyid3` with levels 1= "democraets", 2 = "independents", 3 = "republicans", 4 = "apolitical" , and 
     + political ideology (`ideo` 1 = "liberal", 2 ="moderate", 3 = "conservative") 
-
+```{r}
+nes1992_clean = nes1992 %>% filter(year == 1992) %>% 
+                            filter(!is.na(gender)) %>% 
+                            filter(!is.na(race)) %>% 
+                            filter(!is.na(educ1)) %>% 
+                            filter(!is.na(partyid3)) %>% 
+                            filter(!is.na(ideo))
+                            
+##factor gender
+nes1992_clean$gender = factor(nes1992_clean$gender)
+levels(nes1992_clean$gender) = list("male" = 1, "female" = 2)
+##factor race
+nes1992_clean$race = factor(nes1992_clean$race)
+levels(nes1992_clean$race) = list("white" = 1, "black" = 2, "asian" = 3, "nativea merican" = 4, "hispanic" = 5)
+##factor education
+nes1992_clean$educ1 = factor(nes1992_clean$educ1)
+levels(nes1992_clean$educ1) = list("no high school" = 1, "high school graduate" = 2, "some college" = 3, "college graduate" = 4)
+##factor party identification
+nes1992_clean$partyid3 = factor(nes1992_clean$partyid3)
+levels(nes1992_clean$partyid3) = list("democraets" = 1, "independents" = 2, "republicans" = 3, "apolitical" = 9)
+##political ideology
+nes1992_clean$ideo = factor(nes1992_clean$ideo)
+levels(nes1992_clean$ideo) = list("liberal" =1 , "moderate" = 3, "conservative" = 5)
+```
 
 12.  Fit a logistic regression model predicting support for Bush given the the variables above and income as predictors and also consider interactions among the predictors. 
+```{r}
+
+```
 
 13.  Plot binned residuals using the function `binnedplot` from package `arm` versus some of the additional predictors in the 1992 dataframe.  Are there any suggestions that the mean or distribution of residuals is different across the levels of the other predictors and that they should be added to the model?  (Provide plots and any other summaries to explain).   
+```{r}
 
+```
 
 14.  Evaluate and compare the different models you fit.  Consider coefficient estimates (are they stable across models) and standard errors (any indications of identifiability problems), residual plots and deviances.
+```{r}
 
+```
  
 
 15.  Compute the error rate of your model (see GH page 99) and compare it to the error rate of the null model.  We can define a function for the error rate as:
@@ -251,14 +281,24 @@ error.rate = function(pred, true) {
 ```
 
 16.  For your chosen model, discuss and compare the importance of each input variable in the prediction.   Provide a neatly formatted table of odds ratios  and 95\% confidence intervals.
+```{r}
 
+```
 
 17.  Provide a paragraph summarizing your findings and interpreting key coefficients (providing ranges of supporting values from above) in terms of the odds of voting for Bush.  Attempt to write this at a level that readers of the New York Times Upshot column could understand.   
+```{r}
 
+```
 
 18.  In the above analysis, we removed missing data.  Repeat the data cleaning steps, but remove only the rows where the response variable, `presvote` is missing.  Recode all of the predictors (including income) so that there is a level that is 'missing' for any NA's for each variable.  How many observations are there now compared to the complete data?
+```{r}
 
+```
 19. For any of above variables, suggest possible reasons why they may be missing.
+```{r}
 
+```
 20.  Rerun your selected model and create a table of parameter estimates and confidence intervals for the odds ratios.  You should have an additional coefficient for any categorical variable with missing data.   Comment on any changes in results for the model including the missing data and the previous one that used only complete data.
+```{r}
 
+```
