@@ -321,13 +321,13 @@ levels(nes1992_clean$ideo) = list("liberal" =1 , "moderate" = 3, "conservative" 
 ##baseline model
 glm_1992_ori = glm(vote~  income + gender + race + educ1 + partyid3 + ideo,
                           data = nes1992_clean,
-                          family = binomial(link = "logit"),
-                          maxit = 100)
+                          family = binomial(link = "logit")
+                           )
 ##add interaction
 glm_1992_inr = glm(vote~  income + gender + race + educ1 + partyid3 + ideo + race:gender + gender:partyid3, 
                            data = nes1992_clean, 
-                           family = binomial(link = "logit"),
-                           maxit = 100)
+                           family = binomial(link = "logit")
+                           )
 
 ```
 
@@ -350,9 +350,15 @@ state_flat = as.numeric(data.matrix(nes1992_clean["state"]))
 binnedplot(state_flat, res, xlab = "state")
 
 
-ideo_feel_flat = as.numeric(data.matrix(nes1992_clean["ideo_feel"]))
+ideo_feel_flat = as.numeric(data.matrix(nes1992_clean["urban"]))
 binnedplot(ideo_feel_flat, res, xlab = "ideo_feel")
 
+
+a = binned.resids(ideo_feel_flat, res)
+
+par(mfrow = c(1,2))
+plot( a[[1]][,1],a[[1]][,2])
+binnedplot(age_flat, res, xlab = "age")
 ```
 
 14.  Evaluate and compare the different models you fit.  Consider coefficient estimates (are they stable across models) and standard errors (any indications of identifiability problems), residual plots and deviances.
@@ -396,23 +402,11 @@ print(xtable(round(ci, 4)), comment=F)
 ```
 
 17.  Provide a paragraph summarizing your findings and interpreting key coefficients (providing ranges of supporting values from above) in terms of the odds of voting for Bush.  Attempt to write this at a level that readers of the New York Times Upshot column could understand.   
-```{r}
-sum(is.na(nes["presvote"]))
-```
+
 
 18.  In the above analysis, we removed missing data.  Repeat the data cleaning steps, but remove only the rows where the response variable, `presvote` is missing.  Recode all of the predictors (including income) so that there is a level that is 'missing' for any NA's for each variable.  How many observations are there now compared to the complete data?
 
 
-
-
-
-
-11.  Return to the 1992 year data. Filter out rows of `nes1992` with NA's in the variables below and  recode as factors using the levels in parentheses:
-    + gender (1 = "male", 2 = "female"), 
-    + race (1 = "white", 2 = "black", 3 = "asian", 4 = "native american", 5 = "hispanic", 7 = "other"), 
-    + education ( use `educ1` with levels 1 = "no high school", 2 = "high school graduate", 3 = "some college", 4 = "college graduate"), 
-    + party identification (`partyid3` with levels 1= "democraets", 2 = "independents", 3 = "republicans", 4 = "apolitical" , and 
-    + political ideology (`ideo` 1 = "liberal", 2 ="moderate", 3 = "conservative") 
 ```{r}
 # Data cleaning
 # remove NA's for key variables first
@@ -422,33 +416,65 @@ nes1992_na = nes %>% filter(presvote %in% 1:2) %>%
                             black=race ==2,
                             vote = presvote ==2)
 
+##remove 9 and na in partyid3 columns
+pid3_9ix = which(nes1992_na["partyid3"] == 9)
+pid3_naix = which(is.na(nes1992_na$partyid3) == TRUE)
 
+
+
+nes1992_na = nes1992_na[-c(pid3_9ix,pid3_naix)]
 
 ##factor gender
 nes1992_na$gender = factor(nes1992_na$gender)
 levels(nes1992_na$gender) = list("male" = 1, "female" = 2)
+
 ##factor race
-nes1992_na$race = factor(nes1992_clean$race)
-levels(nes1992_clean$race) = list("white" = 1, "black" = 2, "asian" = 3, "nativea merican" = 4, "hispanic" = 5)
+nes1992_na$race[which(is.na(nes1992_na$race) == TRUE)] = "na"
+nes1992_na$race = factor(nes1992_na$race)
+levels(nes1992_na$race) = list("white" = "1", "black" = "2", "asian" = "3", "nativea merican" = "4", "hispanic" = "5", "na" = "na")
+
 ##factor education
-nes1992_clean$educ1 = factor(nes1992_clean$educ1)
-levels(nes1992_clean$educ1) = list("no high school" = 1, "high school graduate" = 2, "some college" = 3, "college graduate" = 4)
+nes1992_na$educ1[which(is.na(nes1992_na$educ1) == TRUE)] = "na"
+nes1992_na$educ1 = factor(nes1992_na$educ1)
+levels(nes1992_na$educ1) = list("no high school" = "1", "high school graduate" = "2", "some college" = "3", "college graduate" = "4", "na" = "na")
+
 ##factor party identification
-nes1992_clean$partyid3 = factor(nes1992_clean$partyid3)
-levels(nes1992_clean$partyid3) = list("democraets" = 1, "independents" = 2, "republicans" = 3)
+nes1992_na$partyid3[which(is.na(nes1992_na$partyid3) == TRUE)] = "na"
+nes1992_na$partyid3 = factor(nes1992_na$partyid3)
+levels(nes1992_na$partyid3) = list("democraets" = "1", "independents" = "2", "republicans" = "3")
+
 ##political ideology
+nes1992_na$ideo[which(is.na(nes1992_na$ideo) == TRUE)] = "na"
 nes1992_clean$ideo = factor(nes1992_clean$ideo)
-levels(nes1992_clean$ideo) = list("liberal" =1 , "moderate" = 3, "conservative" = 5)
+levels(nes1992_clean$ideo) = list("liberal" ="1" , "moderate" = "3", "conservative" = "5", "na" = "na")
+
+##income
+nes1992_na$income[which(is.na(nes1992_na$income) == TRUE)] = "na"
+nes1992_clean$income = factor(nes1992_clean$income)
+levels(nes1992_clean$income) = list("1" = "1" , "2" = "2", "3" = "3", "4" = "4", "5" = "5", "na" = "na")
+
+
+dim(nes1992)
+dim(nes1992_na)
 ```
+  Cleaning and recode NA procedure are given above. Here I deleted 9 and na in partyid3 column since there are only one 9 and 3nas in this columns. After deleting, I factorize each variable and recode its corresponding level.
+  For the complete data, there are 1304 observations in total. For missing-value data, there are 1179 observations in total.
+
 
 19. For any of above variables, suggest possible reasons why they may be missing.
-```{r}
+  One of the reason for the missing values is that people do not want others know their real conditions. For example, there is a guy who tells his friends he supports Democratic and in fact he support republican. Anthoer example is that many people do not want to release their salaries.
 
-
-
-```
-
+ 
 20.  Rerun your selected model and create a table of parameter estimates and confidence intervals for the odds ratios.  You should have an additional coefficient for any categorical variable with missing data.   Comment on any changes in results for the model including the missing data and the previous one that used only complete data.
 ```{r}
+##add interaction
+glm_1992_inr_na = glm(vote~  income + gender + race + educ1 + partyid3 + ideo + race:gender + gender:partyid3, 
+                           data = nes1992_na, 
+                           family = binomial(link = "logit"),
+                           maxit = 100)
 
+ci_na = exp(cbind(coef(glm_1992_inr_na),confint(glm_1992_inr_na)))
+suppressMessages(print(ci_na))
+colnames(ci_na) = c("RR", "2.5", "97.5")
+print(xtable(round(ci_na, 4)), comment=F)
 ```
