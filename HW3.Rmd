@@ -307,7 +307,7 @@ nes1992_clean$ideo = factor(nes1992_clean$ideo)
 levels(nes1992_clean$ideo) = list("liberal" =1 , "moderate" = 3, "conservative" = 5)
 index = which(is.na(nes1992_clean$partyid3))
 nes1992_clean = nes1992_clean[-index,]
-dim(nes1992_clean)
+
 ```
 
 12.  Fit a logistic regression model predicting support for Bush given the the variables above and income as predictors and also consider interactions among the predictors. 
@@ -363,8 +363,7 @@ Therefore, we tried to add rlikes and dlikes to the model. The following is the 
 
 ```{r}
 glm_1992_new = glm(vote~  income + gender + race + educ1 + partyid3 + ideo + race:gender + gender:partyid3+dlikes+rlikes, data = nes1992_clean, 
-                           family = binomial(link = "logit"),
-                           maxit = 100)
+                           family = binomial(link = "logit"))
 summary(glm_1992_new)
 plot(glm_1992_new)
 ```
@@ -372,6 +371,9 @@ plot(glm_1992_new)
 
 14.  Evaluate and compare the different models you fit.  Consider coefficient estimates (are they stable across models) and standard errors (any indications of identifiability problems), residual plots and deviances.
 ```{r}
+summary(glm_1992_ori)
+summary(glm_1992_inr)
+summary(glm_1992_new)
 anova(glm_1992_ori,glm_1992_inr, glm_1992_new,test = "Chisq")
 ```
  
@@ -382,6 +384,7 @@ error.rate = function(pred, true) {
   mean((pred > .5 & true == 0) | (pred < .5 & true == 1))
 }
 ```
+
 ```{r}
 #compute error rate for glm_1992_new
 true = nes1992_clean$vote
