@@ -251,21 +251,13 @@ As shown above, the log odds ratios for income are exactly the same generated fr
 10.  Create a plot of fitted probabilities and confidence intervals as in question 4, with curves for all years in the same plot.
 
 ```{r}
-# Figure 5.1(a)
-x<-seq(from=-4, to=10, by=.5)
-M<-data.frame(xx=x, prob.smooth=invlogit(coef(rep)[1]+coef(rep)[2]*x))
-p1<-ggplot(M, aes(x=xx, y=prob.smooth))
-fig1<-p1+geom_line(aes(y = prob.smooth))+geom_point(data=nes52.2000, aes(x=income, y=1*vote),size=.25,position = position_jitter(width = 0.35, height = .1))+geom_line(data=subset(M, M$xx>=1 & M$xx<=5), aes(x=xx, y=prob.smooth), size=2)+labs(x="Income", y="Pr(Rebublican vote)")+scale_x_continuous(breaks=c(1,2,3,4,5))
-
-# Figure 5.1(b)
-sims<-sim(rep)
 x<-seq(from=1, to=5, by=.05)
-M<-data.frame(xx=x, prob.smooth=invlogit(coef(rep)[1]+coef(rep)[2]*x))
-fig2<-ggplot(M, aes(x=xx, y=prob.smooth))+geom_line(aes(y = prob.smooth))+geom_point(data=nes52.2000, aes(x=income, y=1*vote),size=.25,position = position_jitter(width = 0.25, height = .1))+labs(x="Income", y="Pr(Rebublican vote)")+scale_x_continuous(breaks=c(1,2,3,4,5))
-for(q in 1:20){
-  M2<-data.frame(xx=x, prob.smooth=invlogit(sims@coef[q,1]+sims@coef[q,2]*x))
+M<-data.frame(xx=x, prob.smooth=invlogit(intercept.store[1]+inc.indiv[1]*x))
+fig2<-ggplot(M, aes(x=xx, y=prob.smooth))+geom_line(aes(y = prob.smooth))+geom_point(data=nes52.2000, aes(x=income, y=1*vote), color="hotpink", size=.25, position = position_jitter(width = 0.25, height = .1))+labs(x="Income", y="Pr(Rebublican vote)")+scale_x_continuous(breaks=c(1,2,3,4,5))
+for(i in 2:length(yr)){
+  M2<-data.frame(xx=x, prob.smooth=invlogit(intercept.store[i]+inc.indiv[i]*x))
 
-  fig2<-fig2+geom_line(data=M2,aes(y = prob.smooth), size=.25, linetype=3)
+  fig2<-fig2+geom_line(data=M2,aes(y = prob.smooth), color=i, size=.25)
 }
 
 par(mfrow=c(2,2)) 
