@@ -13,6 +13,7 @@ library(magrittr)
 library(dplyr)
 library(ggplot2)
 library(xtable)
+library(knitr)
 # add other libraries
 
 ```
@@ -95,7 +96,7 @@ new <- data.frame(income = c(1,2,3,4,5))
 glm_fit<-predict(vote.glm1, newdata = new,  type="response" ,se.fit = TRUE)
 inc<-c(1,2,3,4,5)
 f<-data.frame(Income=inc, Prob=round(glm_fit$fit,3), CI.low=round(glm_fit$fit-1.96*glm_fit$se.fit,3),CI.up=round(glm_fit$fit+1.96*glm_fit$se.fit,3))
-print(xtable(f), comment=F)
+print(f, comment=F)
 
 ```
 
@@ -186,7 +187,7 @@ OR[i,3:4] <- exp(4*rep.ci[2,])
 inc.indiv[i]<-rep$coefficients[2]
 intercept.store[i]<-rep$coefficients[1]
 }
-xtable(round(OR,2))
+print(round(OR,2))
 
 # old version:
 # yr <- unique(year)
@@ -431,9 +432,8 @@ glm_1992_new = glm(vote~  income + gender + race + educ1 + partyid3 + ideo + rac
 
 
 ci = cbind(exp(glm_1992_new$coefficients),exp(confint.default(glm_1992_new)))
-suppressMessages(print(ci))
 colnames(ci) = c("RR", "2.5", "97.5")
-print(xtable(round(ci, 4)), comment=F)
+suppressMessages(print(ci))
 ```
 
 17.  Provide a paragraph summarizing your findings and interpreting key coefficients (providing ranges of supporting values from above) in terms of the odds of voting for Bush.  Attempt to write this at a level that readers of the New York Times Upshot column could understand. 
@@ -513,9 +513,8 @@ glm_1992_new_na = glm(vote~  income + gender + race + educ1 + partyid3 + ideo + 
 summary(glm_1992_new_na)
 
 ci_na = exp(cbind(coef(glm_1992_new_na),confint.default(glm_1992_new_na)))
-suppressMessages(print(ci_na))
 colnames(ci_na) = c("RR", "2.5", "97.5")
-print(xtable(round(ci_na, 4)), comment=F)
+suppressMessages(print(ci_na))
 ```
 
 We compared missing data model with non-missing data, there is no significant change in missing data model. The only interesting change is that one interaction term tends to be significant. Women who are republicans are less likely to vote for bush than women who are not republicans. The overall no change indicates that all missing values are randomly missing. There is no pattern for these missing values. 
