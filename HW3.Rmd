@@ -250,16 +250,35 @@ As shown above, the log odds ratios for income are exactly the same generated fr
 
 ```{r}
 x<-seq(from=1, to=5, by=.05)
+
 M<-data.frame(xx=x, prob.smooth=invlogit(intercept.store[1]+inc.indiv[1]*x))
-fig2<-ggplot(M, aes(x=xx, y=prob.smooth))+geom_line(aes(y = prob.smooth))+geom_point(data=nes52.2000, aes(x=income, y=1*vote), color="hotpink", size=.25, position = position_jitter(width = 0.25, height = .1))+labs(x="Income", y="Pr(Rebublican vote)")+scale_x_continuous(breaks=c(1,2,3,4,5))
+fig2<-ggplot(M, aes(x=xx, y=prob.smooth))+geom_line(aes(y = prob.smooth))+geom_point(data=nes52.2000, aes(x=income, y=1*vote), color="hotpink", size=.25, position = position_jitter(width = 0.25, height = .1))+labs(x="Income", y="Pr(Republican vote)")+scale_x_continuous(breaks=c(1,2,3,4,5))
+
+rep <- glm(vote ~ income, data=nes52.2000, family=binomial(link="logit"), subset=year==yr[1])
+rep.sim <- sim(rep)
+
 for(i in 2:length(yr)){
   M2<-data.frame(xx=x, prob.smooth=invlogit(intercept.store[i]+inc.indiv[i]*x))
 
   fig2<-fig2+geom_line(data=M2,aes(y = prob.smooth), color=i, size=.25)
+  
+  for(j in 1:20) {
+  M3<-data.frame(xx=x, prob.smooth=invlogit(rep.sim@coef[j,1]+rep.sim@coef[j,2]*x))
+
+  fig2<-fig2+geom_line(data=M3,aes(y = prob.smooth), color=i-1, size=.25, linetype=3)
+  }
+  
+  rep <- glm(vote ~ income, data=nes52.2000, family=binomial(link="logit"), subset=year==yr[i])
+  rep.sim <- sim(rep)
 }
 
+for(k in 1:20) {
+  M3<-data.frame(xx=x, prob.smooth=invlogit(rep.sim@coef[k,1]+rep.sim@coef[k,2]*x))
+
+  fig2<-fig2+geom_line(data=M3,aes(y = prob.smooth), color=13, size=.25, linetype=3)
+  }
+
 par(mfrow=c(2,2)) 
-plot(fig1)
 
 plot(fig2)
 #old code:
@@ -315,7 +334,9 @@ nes1992_clean = nes1992_clean[-index,]
 ##baseline model which doesn't have any interactions
 glm_1992_ori = glm(vote~ income + gender + race + educ1 + partyid3 + ideo,
                           data = nes1992_clean,
-                          family = binomial(link = "logit"))
+                          family = binomial(link = "logit")
+                           )
+
 summary(glm_1992_ori)
 plot(glm_1992_ori)
 ```
@@ -351,9 +372,6 @@ binnedplot(rlikes_flat, res, xlab = "rlikes")
 ##binned plot residual vs dlikes
 dlikes_flat = as.numeric(data.matrix(nes1992_clean["dlikes"]))
 binnedplot(dlikes_flat, res, xlab = "dlikes")
-
-
-
 ```
 
 From the binned plots above, it appears that the last two binned plots: residual vs dlikes and residual vs rlikes, the distribution of mean have some pattern across different levels in x axis. 
@@ -407,38 +425,26 @@ Comparing the error rates, we can see that glm_1992_new provides the lowest erro
 
 16.  For your chosen model, discuss and compare the importance of each input variable in the prediction.   Provide a neatly formatted table of odds ratios  and 95\% confidence intervals.
 ```{r}
-glm_1992_idf = glm(vote~  income + gender + race + educ1 + partyid3 + ideo + ideo_feel + race:gender + gender:partyid3, 
-                           data = nes1992_clean, 
+glm_1992_new = glm(vote~  income + gender + race + educ1 + partyid3 + ideo + race:gender + gender:partyid3+dlikes+rlikes, data = nes1992_clean, 
                            family = binomial(link = "logit"),
                            maxit = 100)
 
-summary(glm_1992_idf)
 
-
-ci = exp(cbind(coef(glm_1992_idf),confint(glm_1992_idf)))
+ci = cbind(exp(glm_1992_new$coefficients),exp(confint.default(glm_1992_new)))
 suppressMessages(print(ci))
 colnames(ci) = c("RR", "2.5", "97.5")
 print(xtable(round(ci, 4)), comment=F)
 ```
 
-17.  Provide a paragraph summarizing your findings and interpreting key coefficients (providing ranges of supporting values from above) in terms of the odds of voting for Bush.  Attempt to write this at a level that readers of the New York Times Upshot column could understand.   
-```{r}
-sum(is.na(nes["presvote"]))
-```
+17.  Provide a paragraph summarizing your findings and interpreting key coefficients (providing ranges of supporting values from above) in terms of the odds of voting for Bush.  Attempt to write this at a level that readers of the New York Times Upshot column could understand. 
+
+  First, gender in our model is significant. Women are more likely to vote for Bush than man. Also, party identification matters in our model. Republicans and Independents are more likely to vote for bush than democrats. Also, people whose political ideology is conservative are more likely to vote for bush than people who have other political ideology. Also, people who feel good with Democratic Party are less likely to vote bush and people who feel good with Republican Party are more likely to vote bush.
+  From our model, there is no evidence that people with high education have the trend to vote for bush or not.
+
 
 18.  In the above analysis, we removed missing data.  Repeat the data cleaning steps, but remove only the rows where the response variable, `presvote` is missing.  Recode all of the predictors (including income) so that there is a level that is 'missing' for any NA's for each variable.  How many observations are there now compared to the complete data?
 
 
-
-
-
-
-11.  Return to the 1992 year data. Filter out rows of `nes1992` with NA's in the variables below and  recode as factors using the levels in parentheses:
-    + gender (1 = "male", 2 = "female"), 
-    + race (1 = "white", 2 = "black", 3 = "asian", 4 = "native american", 5 = "hispanic", 7 = "other"), 
-    + education ( use `educ1` with levels 1 = "no high school", 2 = "high school graduate", 3 = "some college", 4 = "college graduate"), 
-    + party identification (`partyid3` with levels 1= "democraets", 2 = "independents", 3 = "republicans", 4 = "apolitical" , and 
-    + political ideology (`ideo` 1 = "liberal", 2 ="moderate", 3 = "conservative") 
 ```{r}
 # Data cleaning
 # remove NA's for key variables first
@@ -448,33 +454,68 @@ nes1992_na = nes %>% filter(presvote %in% 1:2) %>%
                             black=race ==2,
                             vote = presvote ==2)
 
+##remove 9 and na in partyid3 columns
+pid3_9ix = which(nes1992_na["partyid3"] == 9)
+pid3_naix = which(is.na(nes1992_na$partyid3) == TRUE)
 
+
+
+nes1992_na = nes1992_na[-c(pid3_9ix,pid3_naix)]
 
 ##factor gender
 nes1992_na$gender = factor(nes1992_na$gender)
 levels(nes1992_na$gender) = list("male" = 1, "female" = 2)
+
 ##factor race
-nes1992_na$race = factor(nes1992_clean$race)
-levels(nes1992_clean$race) = list("white" = 1, "black" = 2, "asian" = 3, "nativea merican" = 4, "hispanic" = 5)
+nes1992_na$race[which(is.na(nes1992_na$race) == TRUE)] = "na"
+nes1992_na$race = factor(nes1992_na$race)
+levels(nes1992_na$race) = list("white" = "1", "black" = "2", "asian" = "3", "nativea merican" = "4", "hispanic" = "5", "na" = "na")
+
 ##factor education
-nes1992_clean$educ1 = factor(nes1992_clean$educ1)
-levels(nes1992_clean$educ1) = list("no high school" = 1, "high school graduate" = 2, "some college" = 3, "college graduate" = 4)
+nes1992_na$educ1[which(is.na(nes1992_na$educ1) == TRUE)] = "na"
+nes1992_na$educ1 = factor(nes1992_na$educ1)
+levels(nes1992_na$educ1) = list("no high school" = "1", "high school graduate" = "2", "some college" = "3", "college graduate" = "4", "na" = "na")
+
 ##factor party identification
-nes1992_clean$partyid3 = factor(nes1992_clean$partyid3)
-levels(nes1992_clean$partyid3) = list("democraets" = 1, "independents" = 2, "republicans" = 3)
+nes1992_na$partyid3[which(is.na(nes1992_na$partyid3) == TRUE)] = "na"
+nes1992_na$partyid3 = factor(nes1992_na$partyid3)
+levels(nes1992_na$partyid3) = list("democraets" = "1", "independents" = "2", "republicans" = "3")
+
 ##political ideology
+nes1992_na$ideo[which(is.na(nes1992_na$ideo) == TRUE)] = "na"
 nes1992_clean$ideo = factor(nes1992_clean$ideo)
-levels(nes1992_clean$ideo) = list("liberal" =1 , "moderate" = 3, "conservative" = 5)
+levels(nes1992_clean$ideo) = list("liberal" ="1" , "moderate" = "3", "conservative" = "5", "na" = "na")
+
+##income
+nes1992_na$income[which(is.na(nes1992_na$income) == TRUE)] = "na"
+nes1992_clean$income = factor(nes1992_clean$income)
+levels(nes1992_clean$income) = list("1" = "1" , "2" = "2", "3" = "3", "4" = "4", "5" = "5", "na" = "na")
+
+
+dim(nes1992)
+dim(nes1992_na)
 ```
+  Cleaning and recode NA procedure are given above. Here I deleted 9 and na in partyid3 column since there are only one 9 and 3nas in this columns. After deleting, I factorize each variable and recode its corresponding level.
+  For the complete data, there are 1304 observations in total. For missing-value data, there are 1179 observations in total.
+
 
 19. For any of above variables, suggest possible reasons why they may be missing.
-```{r}
+  One of the reason for the missing values is that people do not want others know their real conditions. For example, there is a guy who tells his friends he supports Democratic and in fact he support republican. Anthoer example is that many people do not want to release their salaries.
 
-
-
-```
-
+ 
 20.  Rerun your selected model and create a table of parameter estimates and confidence intervals for the odds ratios.  You should have an additional coefficient for any categorical variable with missing data.   Comment on any changes in results for the model including the missing data and the previous one that used only complete data.
 ```{r}
+##add interaction
+glm_1992_new_na = glm(vote~  income + gender + race + educ1 + partyid3 + ideo + race:gender + gender:partyid3+dlikes+rlikes, data = nes1992_na, 
+                           family = binomial(link = "logit"),
+                           maxit = 100)
 
+summary(glm_1992_new_na)
+
+ci_na = exp(cbind(coef(glm_1992_new_na),confint.default(glm_1992_new_na)))
+suppressMessages(print(ci_na))
+colnames(ci_na) = c("RR", "2.5", "97.5")
+print(xtable(round(ci_na, 4)), comment=F)
 ```
+
+We compared missing data model with non-missing data, there is no significant change in missing data model. The only interesting change is that one interaction term tends to be significant. Women who are republicans are less likely to vote for bush than women who are not republicans. The overall no change indicates that all missing values are randomly missing. There is no pattern for these missing values. 
