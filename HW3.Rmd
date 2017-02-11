@@ -353,13 +353,6 @@ binnedplot(rlikes_flat, res, xlab = "rlikes")
 ##binned plot residual vs dlikes
 dlikes_flat = as.numeric(data.matrix(nes1992_clean["dlikes"]))
 binnedplot(dlikes_flat, res, xlab = "dlikes")
-
-
-a = binned.resids(ideo_feel_flat, res)
-
-par(mfrow = c(1,2))
-plot( a[[1]][,1],a[[1]][,2])
-binnedplot(age_flat, res, xlab = "age")
 ```
 
 From the binned plots above, it appears that the last two binned plots: residual vs dlikes and residual vs rlikes, the distribution of mean have some pattern across different levels in x axis. 
@@ -412,21 +405,20 @@ Comparing the error rates, we can see that glm_1992_new provides the lowest erro
 
 16.  For your chosen model, discuss and compare the importance of each input variable in the prediction.   Provide a neatly formatted table of odds ratios  and 95\% confidence intervals.
 ```{r}
-glm_1992_idf = glm(vote~  income + gender + race + educ1 + partyid3 + ideo + ideo_feel + race:gender + gender:partyid3, 
-                           data = nes1992_clean, 
+glm_1992_new = glm(vote~  income + gender + race + educ1 + partyid3 + ideo + race:gender + gender:partyid3+dlikes+rlikes, data = nes1992_clean, 
                            family = binomial(link = "logit"),
                            maxit = 100)
 
-summary(glm_1992_idf)
 
-
-ci = exp(cbind(coef(glm_1992_idf),confint(glm_1992_idf)))
+ci = cbind(exp(glm_1992_new$coefficients),exp(confint.default(glm_1992_new)))
 suppressMessages(print(ci))
 colnames(ci) = c("RR", "2.5", "97.5")
 print(xtable(round(ci, 4)), comment=F)
 ```
 
 17.  Provide a paragraph summarizing your findings and interpreting key coefficients (providing ranges of supporting values from above) in terms of the odds of voting for Bush.  Attempt to write this at a level that readers of the New York Times Upshot column could understand.   
+
+
 
 
 18.  In the above analysis, we removed missing data.  Repeat the data cleaning steps, but remove only the rows where the response variable, `presvote` is missing.  Recode all of the predictors (including income) so that there is a level that is 'missing' for any NA's for each variable.  How many observations are there now compared to the complete data?
@@ -493,12 +485,12 @@ dim(nes1992_na)
 20.  Rerun your selected model and create a table of parameter estimates and confidence intervals for the odds ratios.  You should have an additional coefficient for any categorical variable with missing data.   Comment on any changes in results for the model including the missing data and the previous one that used only complete data.
 ```{r}
 ##add interaction
-glm_1992_inr_na = glm(vote~  income + gender + race + educ1 + partyid3 + ideo + race:gender + gender:partyid3, 
-                           data = nes1992_na, 
+glm_1992_new_na = glm(vote~  income + gender + race + educ1 + partyid3 + ideo + race:gender + gender:partyid3+dlikes+rlikes, data = nes1992_clean, 
                            family = binomial(link = "logit"),
                            maxit = 100)
 
-ci_na = exp(cbind(coef(glm_1992_inr_na),confint(glm_1992_inr_na)))
+
+ci_na = exp(cbind(coef(glm_1992_new_na),confint.default(glm_1992_new_na)))
 suppressMessages(print(ci_na))
 colnames(ci_na) = c("RR", "2.5", "97.5")
 print(xtable(round(ci_na, 4)), comment=F)
