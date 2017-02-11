@@ -395,7 +395,11 @@ summary(glm_1992_inr)
 summary(glm_1992_new)
 anova(glm_1992_ori,glm_1992_inr, glm_1992_new,test = "Chisq")
 ```
+ Comparing the coefficents and standard errors, we find that the coefficients are relatively stable. However, there seems to be a separation(identifiability) problem because the standard error and coef for genderfemale:raceasian are unusually large.
  
+Among the three models, glm_1992_new has the lowest residual deviance 320.01, which is much smaller compared to other models.
+
+Therefore, the model glm_1992_new seems to be the best choice for now.
 
 15.  Compute the error rate of your model (see GH page 99) and compare it to the error rate of the null model.  We can define a function for the error rate as:
 ```{r error.rate, include=FALSE}
@@ -422,7 +426,7 @@ null_model = glm(vote~1,data=nes1992_clean)
 pred = predict(null_model,type = "response")
 error.rate(pred, true)
 ```
-Comparing the error rates, we can see that glm_1992_new provides the lowest error rate.
+Comparing the error rates, we can see that glm_1992_new provides the lowest error rate 0.058.
 
 16.  For your chosen model, discuss and compare the importance of each input variable in the prediction.   Provide a neatly formatted table of odds ratios  and 95\% confidence intervals.
 ```{r}
