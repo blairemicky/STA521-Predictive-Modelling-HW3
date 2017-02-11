@@ -49,7 +49,9 @@ ANSWER: In 1992, information in the form of 57 data fields was gathered from 117
 ```{r, results='asis', echo=T}
 #attach(nes1992)
 a<-(apply(is.na(nes1992),2,sum))
-print(a[a>0])
+#print(a[a>0])
+print(a[a==0])
+apply(nes1992,2,unique)
 ```
 
 2. Fit the logistic regression to estimate the probability that an individual would vote Bush (Republican) as a function of income and provide a summary of the model.
@@ -294,8 +296,8 @@ nes1992_clean = nes1992 %>% filter(year == 1992) %>%
                             filter(!is.na(race)) %>% 
                             filter(!is.na(educ1)) %>% 
                             filter(!is.na(partyid3)) %>% 
-                            filter(!is.na(ideo)) %>% 
-                            filter(!is.na(ideo_feel))
+                            filter(!is.na(ideo)) 
+                           
  
 ##factor gender
 nes1992_clean$gender = factor(nes1992_clean$gender)
@@ -312,23 +314,28 @@ levels(nes1992_clean$partyid3) = list("democraets" = 1, "independents" = 2, "rep
 ##political ideology
 nes1992_clean$ideo = factor(nes1992_clean$ideo)
 levels(nes1992_clean$ideo) = list("liberal" =1 , "moderate" = 3, "conservative" = 5)
+index = which(is.na(nes1992_clean$partyid3))
+nes1992_clean = nes1992_clean[-index,]
+dim(nes1992_clean)
 ```
 
 12.  Fit a logistic regression model predicting support for Bush given the the variables above and income as predictors and also consider interactions among the predictors. 
 ```{r}
-
-
-##baseline model
-glm_1992_ori = glm(vote~  income + gender + race + educ1 + partyid3 + ideo,
+##baseline model which doesn't have any interactions
+glm_1992_ori = glm(vote~ income + gender + race + educ1 + partyid3 + ideo,
                           data = nes1992_clean,
-                          family = binomial(link = "logit"),
-                          maxit = 100)
+                          family = binomial(link = "logit"))
+summary(glm_1992_ori)
+plot(glm_1992_ori)
+```
+
+```{r}
 ##add interaction
 glm_1992_inr = glm(vote~  income + gender + race + educ1 + partyid3 + ideo + race:gender + gender:partyid3, 
                            data = nes1992_clean, 
-                           family = binomial(link = "logit"),
-                           maxit = 100)
-
+                           family = binomial(link = "logit"))
+summary(glm_1992_inr)
+plot(glm_1992_inr)
 ```
 
 13.  Plot binned residuals using the function `binnedplot` from package `arm` versus some of the additional predictors in the 1992 dataframe.  Are there any suggestions that the mean or distribution of residuals is different across the levels of the other predictors and that they should be added to the model?  (Provide plots and any other summaries to explain).   
@@ -337,10 +344,8 @@ glm_1992_inr = glm(vote~  income + gender + race + educ1 + partyid3 + ideo + rac
 pred = predict(glm_1992_inr,type = "link")
 ##deviance residuals: signed square roots of the ith observation to the overall deviance
 res = resid(glm_1992_inr)
-
 binnedplot(pred, res)
 
-par(mfrow = c(1,2))
 ##binned plot residual vs age
 age_flat = as.numeric(data.matrix(nes1992_clean["age"]))
 binnedplot(age_flat, res, xlab = "age")
@@ -349,33 +354,46 @@ binnedplot(age_flat, res, xlab = "age")
 state_flat = as.numeric(data.matrix(nes1992_clean["state"]))
 binnedplot(state_flat, res, xlab = "state")
 
+##binned plot residual vs rlikes
+rlikes_flat = as.numeric(data.matrix(nes1992_clean["rlikes"]))
+binnedplot(rlikes_flat, res, xlab = "rlikes")
+##binned plot residual vs dlikes
+dlikes_flat = as.numeric(data.matrix(nes1992_clean["dlikes"]))
+binnedplot(dlikes_flat, res, xlab = "dlikes")
 
-ideo_feel_flat = as.numeric(data.matrix(nes1992_clean["ideo_feel"]))
-binnedplot(ideo_feel_flat, res, xlab = "ideo_feel")
+
 
 ```
 
-14.  Evaluate and compare the different models you fit.  Consider coefficient estimates (are they stable across models) and standard errors (any indications of identifiability problems), residual plots and deviances.
+From the binned plots above, it appears that the last two binned plots: residual vs dlikes and residual vs rlikes, the distribution of mean have some pattern across different levels in x axis. 
+1. residual vs rlikes: It appears to have a increasing trend as rlikes increases.
+2. residual vs dlikes: It appears to have a decreasing trend as dlikes increases.
+Therefore, we tried to add rlikes and dlikes to the model. The following is the model and summary.It appears that both rlikes and dlikes are very significant in the model as the p-values are much less than 0.05
+
 ```{r}
-##model adding ideo_feel
-glm_1992_idf = glm(vote~  income + gender + race + educ1 + partyid3 + ideo + ideo_feel + race:gender + gender:partyid3, 
-                           data = nes1992_clean, 
+glm_1992_new = glm(vote~  income + gender + race + educ1 + partyid3 + ideo + race:gender + gender:partyid3+dlikes+rlikes, data = nes1992_clean, 
                            family = binomial(link = "logit"),
                            maxit = 100)
+summary(glm_1992_new)
+plot(glm_1992_new)
+```
 
-anova(glm_1992_ori,glm_1992_inr, glm_1992_idf,test = "Chisq")
+
+14.  Evaluate and compare the different models you fit.  Consider coefficient estimates (are they stable across models) and standard errors (any indications of identifiability problems), residual plots and deviances.
+```{r}
+anova(glm_1992_ori,glm_1992_inr, glm_1992_new,test = "Chisq")
 ```
  
 
 15.  Compute the error rate of your model (see GH page 99) and compare it to the error rate of the null model.  We can define a function for the error rate as:
 ```{r error.rate, include=FALSE}
-true = nes1992_clean$vote
-pred = predict(glm_1992_idf,type = "response")
-
 error.rate = function(pred, true) {
   mean((pred > .5 & true == 0) | (pred < .5 & true == 1))
 }
-
+```
+```{r}
+true = nes1992_clean$vote
+pred = predict(glm_1992_new,type = "response")
 error.rate(pred, true)
 ```
 
