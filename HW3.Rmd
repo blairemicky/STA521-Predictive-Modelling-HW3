@@ -14,6 +14,7 @@ library(dplyr)
 library(ggplot2)
 library(xtable)
 # add other libraries
+
 ```
 
 
@@ -248,21 +249,13 @@ As shown above, the log odds ratios for income are exactly the same generated fr
 10.  Create a plot of fitted probabilities and confidence intervals as in question 4, with curves for all years in the same plot.
 
 ```{r}
-# Figure 5.1(a)
-x<-seq(from=-4, to=10, by=.5)
-M<-data.frame(xx=x, prob.smooth=invlogit(coef(rep)[1]+coef(rep)[2]*x))
-p1<-ggplot(M, aes(x=xx, y=prob.smooth))
-fig1<-p1+geom_line(aes(y = prob.smooth))+geom_point(data=nes52.2000, aes(x=income, y=1*vote),size=.25,position = position_jitter(width = 0.35, height = .1))+geom_line(data=subset(M, M$xx>=1 & M$xx<=5), aes(x=xx, y=prob.smooth), size=2)+labs(x="Income", y="Pr(Rebublican vote)")+scale_x_continuous(breaks=c(1,2,3,4,5))
-
-# Figure 5.1(b)
-sims<-sim(rep)
 x<-seq(from=1, to=5, by=.05)
-M<-data.frame(xx=x, prob.smooth=invlogit(coef(rep)[1]+coef(rep)[2]*x))
-fig2<-ggplot(M, aes(x=xx, y=prob.smooth))+geom_line(aes(y = prob.smooth))+geom_point(data=nes52.2000, aes(x=income, y=1*vote),size=.25,position = position_jitter(width = 0.25, height = .1))+labs(x="Income", y="Pr(Rebublican vote)")+scale_x_continuous(breaks=c(1,2,3,4,5))
-for(q in 1:20){
-  M2<-data.frame(xx=x, prob.smooth=invlogit(sims@coef[q,1]+sims@coef[q,2]*x))
+M<-data.frame(xx=x, prob.smooth=invlogit(intercept.store[1]+inc.indiv[1]*x))
+fig2<-ggplot(M, aes(x=xx, y=prob.smooth))+geom_line(aes(y = prob.smooth))+geom_point(data=nes52.2000, aes(x=income, y=1*vote), color="hotpink", size=.25, position = position_jitter(width = 0.25, height = .1))+labs(x="Income", y="Pr(Rebublican vote)")+scale_x_continuous(breaks=c(1,2,3,4,5))
+for(i in 2:length(yr)){
+  M2<-data.frame(xx=x, prob.smooth=invlogit(intercept.store[i]+inc.indiv[i]*x))
 
-  fig2<-fig2+geom_line(data=M2,aes(y = prob.smooth), size=.25, linetype=3)
+  fig2<-fig2+geom_line(data=M2,aes(y = prob.smooth), color=i, size=.25)
 }
 
 par(mfrow=c(2,2)) 
@@ -294,8 +287,8 @@ nes1992_clean = nes1992 %>% filter(year == 1992) %>%
                             filter(!is.na(race)) %>% 
                             filter(!is.na(educ1)) %>% 
                             filter(!is.na(partyid3)) %>% 
-                            filter(!is.na(ideo)) %>% 
-                            filter(!is.na(ideo_feel))
+                            filter(!is.na(ideo)) 
+                           
  
 ##factor gender
 nes1992_clean$gender = factor(nes1992_clean$gender)
@@ -312,23 +305,30 @@ levels(nes1992_clean$partyid3) = list("democraets" = 1, "independents" = 2, "rep
 ##political ideology
 nes1992_clean$ideo = factor(nes1992_clean$ideo)
 levels(nes1992_clean$ideo) = list("liberal" =1 , "moderate" = 3, "conservative" = 5)
+index = which(is.na(nes1992_clean$partyid3))
+nes1992_clean = nes1992_clean[-index,]
+dim(nes1992_clean)
 ```
 
 12.  Fit a logistic regression model predicting support for Bush given the the variables above and income as predictors and also consider interactions among the predictors. 
 ```{r}
-
-
-##baseline model
-glm_1992_ori = glm(vote~  income + gender + race + educ1 + partyid3 + ideo,
+##baseline model which doesn't have any interactions
+glm_1992_ori = glm(vote~ income + gender + race + educ1 + partyid3 + ideo,
                           data = nes1992_clean,
                           family = binomial(link = "logit")
                            )
+
+summary(glm_1992_ori)
+plot(glm_1992_ori)
+```
+
+```{r}
 ##add interaction
 glm_1992_inr = glm(vote~  income + gender + race + educ1 + partyid3 + ideo + race:gender + gender:partyid3, 
                            data = nes1992_clean, 
-                           family = binomial(link = "logit")
-                           )
-
+                           family = binomial(link = "logit"))
+summary(glm_1992_inr)
+plot(glm_1992_inr)
 ```
 
 13.  Plot binned residuals using the function `binnedplot` from package `arm` versus some of the additional predictors in the 1992 dataframe.  Are there any suggestions that the mean or distribution of residuals is different across the levels of the other predictors and that they should be added to the model?  (Provide plots and any other summaries to explain).   
@@ -337,10 +337,8 @@ glm_1992_inr = glm(vote~  income + gender + race + educ1 + partyid3 + ideo + rac
 pred = predict(glm_1992_inr,type = "link")
 ##deviance residuals: signed square roots of the ith observation to the overall deviance
 res = resid(glm_1992_inr)
-
 binnedplot(pred, res)
 
-par(mfrow = c(1,2))
 ##binned plot residual vs age
 age_flat = as.numeric(data.matrix(nes1992_clean["age"]))
 binnedplot(age_flat, res, xlab = "age")
@@ -349,9 +347,12 @@ binnedplot(age_flat, res, xlab = "age")
 state_flat = as.numeric(data.matrix(nes1992_clean["state"]))
 binnedplot(state_flat, res, xlab = "state")
 
-
-ideo_feel_flat = as.numeric(data.matrix(nes1992_clean["urban"]))
-binnedplot(ideo_feel_flat, res, xlab = "ideo_feel")
+##binned plot residual vs rlikes
+rlikes_flat = as.numeric(data.matrix(nes1992_clean["rlikes"]))
+binnedplot(rlikes_flat, res, xlab = "rlikes")
+##binned plot residual vs dlikes
+dlikes_flat = as.numeric(data.matrix(nes1992_clean["dlikes"]))
+binnedplot(dlikes_flat, res, xlab = "dlikes")
 
 
 a = binned.resids(ideo_feel_flat, res)
@@ -361,29 +362,53 @@ plot( a[[1]][,1],a[[1]][,2])
 binnedplot(age_flat, res, xlab = "age")
 ```
 
-14.  Evaluate and compare the different models you fit.  Consider coefficient estimates (are they stable across models) and standard errors (any indications of identifiability problems), residual plots and deviances.
+From the binned plots above, it appears that the last two binned plots: residual vs dlikes and residual vs rlikes, the distribution of mean have some pattern across different levels in x axis. 
+1. residual vs rlikes: It appears to have a increasing trend as rlikes increases.
+2. residual vs dlikes: It appears to have a decreasing trend as dlikes increases.
+Therefore, we tried to add rlikes and dlikes to the model. The following is the model and summary.It appears that both rlikes and dlikes are very significant in the model as the p-values are much less than 0.05
+
 ```{r}
-##model adding ideo_feel
-glm_1992_idf = glm(vote~  income + gender + race + educ1 + partyid3 + ideo + ideo_feel + race:gender + gender:partyid3, 
-                           data = nes1992_clean, 
+glm_1992_new = glm(vote~  income + gender + race + educ1 + partyid3 + ideo + race:gender + gender:partyid3+dlikes+rlikes, data = nes1992_clean, 
                            family = binomial(link = "logit"),
                            maxit = 100)
+summary(glm_1992_new)
+plot(glm_1992_new)
+```
 
-anova(glm_1992_ori,glm_1992_inr, glm_1992_idf,test = "Chisq")
+
+14.  Evaluate and compare the different models you fit.  Consider coefficient estimates (are they stable across models) and standard errors (any indications of identifiability problems), residual plots and deviances.
+```{r}
+anova(glm_1992_ori,glm_1992_inr, glm_1992_new,test = "Chisq")
 ```
  
 
 15.  Compute the error rate of your model (see GH page 99) and compare it to the error rate of the null model.  We can define a function for the error rate as:
 ```{r error.rate, include=FALSE}
-true = nes1992_clean$vote
-pred = predict(glm_1992_idf,type = "response")
-
 error.rate = function(pred, true) {
   mean((pred > .5 & true == 0) | (pred < .5 & true == 1))
 }
+```
 
+
+```{r}
+#compute error rate for glm_1992_new
+true = nes1992_clean$vote
+pred = predict(glm_1992_new,type = "response")
+error.rate(pred, true)
+#compute error rate for glm_1992_ori
+pred = predict(glm_1992_ori,type = "response")
+error.rate(pred, true)
+
+#compute error rate for glm_1992_inr
+pred = predict(glm_1992_inr,type = "response")
+error.rate(pred, true)
+
+#compute error rate for null model
+null_model = glm(vote~1,data=nes1992_clean)
+pred = predict(null_model,type = "response")
 error.rate(pred, true)
 ```
+Comparing the error rates, we can see that glm_1992_new provides the lowest error rate.
 
 16.  For your chosen model, discuss and compare the importance of each input variable in the prediction.   Provide a neatly formatted table of odds ratios  and 95\% confidence intervals.
 ```{r}
