@@ -50,9 +50,7 @@ ANSWER: In 1992, information in the form of 57 data fields was gathered from 117
 ```{r, results='asis', echo=T}
 #attach(nes1992)
 a<-(apply(is.na(nes1992),2,sum))
-#print(a[a>0])
-print(a[a==0])
-apply(nes1992,2,unique)
+print(a[a>0])
 ```
 
 2. Fit the logistic regression to estimate the probability that an individual would vote Bush (Republican) as a function of income and provide a summary of the model.
@@ -385,10 +383,24 @@ error.rate = function(pred, true) {
 }
 ```
 ```{r}
+#compute error rate for glm_1992_new
 true = nes1992_clean$vote
 pred = predict(glm_1992_new,type = "response")
 error.rate(pred, true)
+#compute error rate for glm_1992_ori
+pred = predict(glm_1992_ori,type = "response")
+error.rate(pred, true)
+
+#compute error rate for glm_1992_inr
+pred = predict(glm_1992_inr,type = "response")
+error.rate(pred, true)
+
+#compute error rate for null model
+null_model = glm(vote~1,data=nes1992_clean)
+pred = predict(null_model,type = "response")
+error.rate(pred, true)
 ```
+Comparing the error rates, we can see that glm_1992_new provides the lowest error rate.
 
 16.  For your chosen model, discuss and compare the importance of each input variable in the prediction.   Provide a neatly formatted table of odds ratios  and 95\% confidence intervals.
 ```{r}
