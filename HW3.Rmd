@@ -13,8 +13,11 @@ library(magrittr)
 library(dplyr)
 library(ggplot2)
 library(xtable)
-library(knitr)
+
 # add other libraries
+
+
+
 
 ```
 
@@ -97,7 +100,9 @@ With 95\% confidence, the odds for a rich person (income=5) to vote Republican (
 new <- data.frame(income = c(1,2,3,4,5))
 glm_fit<-predict(vote.glm1, newdata = new,  type="response" ,se.fit = TRUE)
 inc<-c(1,2,3,4,5)
-f<-data.frame(Income=inc, Prob=round(glm_fit$fit,3), CI.low=round(glm_fit$fit-1.96*glm_fit$se.fit,3),CI.up=round(glm_fit$fit+1.96*glm_fit$se.fit,3))
+f<-data.frame(Income=inc, Prob=round(glm_fit$fit,3), 
+              CI.low=round(glm_fit$fit-1.96*glm_fit$se.fit,3),
+              CI.up=round(glm_fit$fit+1.96*glm_fit$se.fit,3))
 print(f, comment=F)
 
 ```
@@ -113,13 +118,25 @@ vote.glm1 <-glm(vote ~ income, data=nes1992, family = binomial(link = "logit"))
 x<-seq(from=-4, to=10, by=.5)
 M<-data.frame(xx=x, prob.smooth=invlogit(coef(vote.glm1)[1]+coef(vote.glm1)[2]*x))
 p1<-ggplot(M, aes(x=xx, y=prob.smooth))
-fig1<-p1+geom_line(aes(y = prob.smooth))+geom_point(data=nes1992, aes(x=income, y=1*vote),size=.25,position = position_jitter(width = 0.25, height = .02))+geom_line(data=subset(M, M$xx>=1 & M$xx<=5), aes(x=xx, y=prob.smooth), size=2)+labs(x="Income", y="Pr(Rebublican vote)")+scale_x_continuous(breaks=c(1,2,3,4,5))
+
+fig1<-p1+geom_line(aes(y = prob.smooth))+
+         geom_point(data=nes1992, aes(x=income, y=1*vote),size=.25,
+                    position = position_jitter(width = 0.25, height = .02))+
+         geom_line(data=subset(M, M$xx>=1 & M$xx<=5), aes(x=xx, y=prob.smooth), size=2)+
+         labs(x="Income", y="Pr(Rebublican vote)")+
+         scale_x_continuous(breaks=c(1,2,3,4,5))
 
 # Figure 5.1(b)
 sims<-sim(vote.glm1)
 x<-seq(from=1, to=5, by=.05)
 M<-data.frame(xx=x, prob.smooth=invlogit(coef(vote.glm1)[1]+coef(vote.glm1)[2]*x))
-fig2<-ggplot(M, aes(x=xx, y=prob.smooth))+geom_line(aes(y = prob.smooth))+geom_point(data=nes1992, aes(x=income, y=1*vote),size=.25,position = position_jitter(width = 0.25, height = .02))+labs(x="Income", y="Pr(Rebublican vote)")+scale_x_continuous(breaks=c(1,2,3,4,5))
+
+fig2<-ggplot(M, aes(x=xx, y=prob.smooth))+
+      geom_line(aes(y = prob.smooth))+
+      geom_point(data=nes1992, aes(x=income, y=1*vote),size=.25,
+                 position = position_jitter(width = 0.25, height = .02))+
+                 labs(x="Income", y="Pr(Rebublican vote)")+
+                 scale_x_continuous(breaks=c(1,2,3,4,5))
 for(q in 1:20){
   M2<-data.frame(xx=x, prob.smooth=invlogit(sims@coef[q,1]+sims@coef[q,2]*x))
 
@@ -177,11 +194,16 @@ nes52.2000 = nes %>% filter(!is.na(black)) %>%
 ```{r}
 
 yr <- unique(nes52.2000$year)
-OR<-data.frame(year=yr, est=numeric(length(yr)), CI.lwr=numeric(length(yr)),CI.upr=numeric(length(yr)) )
+OR<-data.frame(year=yr, 
+               est=numeric(length(yr)), 
+               CI.lwr=numeric(length(yr)),
+               CI.upr=numeric(length(yr)) )
 inc.indiv<-rep(0,length(yr)) # used for question 9
 intercept.store<-rep(0,length(yr)) # used for question 9
 for (i in 1:length(yr)) {
-rep <- glm(vote ~ income, data=nes52.2000, family=binomial(link="logit"), subset=year==yr[i])
+rep <- glm(vote ~ income, data=nes52.2000, 
+                          family=binomial(link="logit"),
+                          subset=year==yr[i])
 OR$est[i]<-exp(4*rep$coefficients[2])
 rep.ci <- suppressMessages(confint(rep))
 OR[i,3:4] <- exp(4*rep.ci[2,])
@@ -199,8 +221,12 @@ print(round(OR,2))
 
 ```{r}
 # use ggplot2
-p<-ggplot(OR, aes(x=year, y=est)) +geom_point()+  geom_errorbar(aes(ymin=CI.lwr, ymax=CI.upr), width=.1)
-p<-p+xlab("Year") + ylab("Odds ratio (95%-CI)")+ylim(0,10) + geom_hline(yintercept=c(1), linetype="dotted")
+p<-ggplot(OR, aes(x=year, y=est))+
+          geom_point()+  
+          geom_errorbar(aes(ymin=CI.lwr, ymax=CI.upr), width=.1)
+p<-p+xlab("Year")+ 
+     ylab("Odds ratio (95%-CI)")+ylim(0,10)+ 
+     geom_hline(yintercept=c(1), linetype="dotted")
 plot(p)
 ```
 
@@ -208,7 +234,8 @@ plot(p)
 
 ```{r}
 inc.int <- rep(0,length(unique(nes52.2000$year)))
-rep_interact <- glm(vote ~ income*factor(year), data = nes52.2000, family=binomial(link="logit"))
+rep_interact <- glm(vote ~ income*factor(year), data = nes52.2000, 
+                                                family=binomial(link="logit"))
 for (i in 1:length(yr)) {
 if (i==1) {
   inc.i <- rep_interact$coefficients[2]
@@ -228,9 +255,17 @@ x<-seq(from=1, to=5, by=.05)
 
 M<-data.frame(xx=x, prob.smooth=invlogit(intercept.store[1]+inc.indiv[1]*x))
 
-fig2<-ggplot(M, aes(x=xx, y=prob.smooth), color = year)+geom_line(aes(y = prob.smooth))+geom_point(data=nes52.2000, aes(x=income, y=1*vote), color="hotpink", size=.25, position = position_jitter(width = 0.25, height = .1))+labs(x="Income", y="Pr(Republican vote)")
+fig2<-ggplot(M, aes(x=xx, y=prob.smooth), color = year)+
+            geom_line(aes(y = prob.smooth))+
+            geom_point(data=nes52.2000, aes(x=income, y=1*vote), 
+                       color="hotpink", 
+                       size=.25, 
+                       position = position_jitter(width = 0.25, height = .1))+
+            labs(x="Income", y="Pr(Republican vote)")
 
-rep <- glm(vote ~ income, data=nes52.2000, family=binomial(link="logit"), subset=year==yr[1])
+rep <- glm(vote ~ income, data=nes52.2000, 
+                          family=binomial(link="logit"), 
+                          subset=year==yr[1])
 rep.sim <- sim(rep)
 
 for(i in 2:length(yr)){
@@ -244,7 +279,9 @@ for(i in 2:length(yr)){
   fig2<-fig2+geom_line(data=M3,aes(y = prob.smooth), color=i-1, size=.25, linetype=3)
   }
   
-  rep <- glm(vote ~ income, data=nes52.2000, family=binomial(link="logit"), subset=year==yr[i])
+  rep <- glm(vote ~ income, data=nes52.2000, 
+                            family=binomial(link="logit"), 
+                            subset=year==yr[i])
   rep.sim <- sim(rep)
 }
 
@@ -253,7 +290,10 @@ for(k in 1:20) {
 
   fig2<-fig2+geom_line(data=M3,aes(y = prob.smooth), color=13, size=.25, linetype=3)
 }
-fig2<-fig2+scale_fill_discrete(name = "Years", labels=c(yr[1], yr[2], yr[3], yr[4], yr[5], yr[6], yr[7], yr[8], yr[9], yr[10], yr[11], yr[12], yr[13]))
+fig2<-fig2+scale_fill_discrete(name = "Years", 
+                               labels=c(yr[1], yr[2], yr[3], yr[4], 
+                                        yr[5], yr[6], yr[7], yr[8], 
+                                        yr[9], yr[10], yr[11], yr[12], yr[13]))
 
 par(mfrow=c(2,2)) 
 
@@ -281,16 +321,22 @@ nes1992_clean$gender = factor(nes1992_clean$gender)
 levels(nes1992_clean$gender) = list("male" = 1, "female" = 2)
 ##factor race
 nes1992_clean$race = factor(nes1992_clean$race)
-levels(nes1992_clean$race) = list("white" = 1, "black" = 2, "asian" = 3, "nativea merican" = 4, "hispanic" = 5)
+levels(nes1992_clean$race) = list("white" = 1, "black" = 2, 
+                                  "asian" = 3, "nativea merican" = 4, "hispanic" = 5)
 ##factor education
 nes1992_clean$educ1 = factor(nes1992_clean$educ1)
-levels(nes1992_clean$educ1) = list("no high school" = 1, "high school graduate" = 2, "some college" = 3, "college graduate" = 4)
+levels(nes1992_clean$educ1) = list("no high school" = 1, "high school graduate" = 2, 
+                                   "some college" = 3, "college graduate" = 4)
 ##factor party identification
 nes1992_clean$partyid3 = factor(nes1992_clean$partyid3)
-levels(nes1992_clean$partyid3) = list("democraets" = 1, "independents" = 2, "republicans" = 3)
+levels(nes1992_clean$partyid3) = list("democraets" = 1, 
+                                      "independents" = 2,
+                                      "republicans" = 3)
 ##political ideology
 nes1992_clean$ideo = factor(nes1992_clean$ideo)
-levels(nes1992_clean$ideo) = list("liberal" =1 , "moderate" = 3, "conservative" = 5)
+levels(nes1992_clean$ideo) = list("liberal" =1 ,
+                                  "moderate" = 3,
+                                  "conservative" = 5)
 index = which(is.na(nes1992_clean$partyid3))
 nes1992_clean = nes1992_clean[-index,]
 
@@ -311,9 +357,10 @@ plot(glm_1992_ori)
 
 ```{r}
 ##add interaction
-glm_1992_inr = glm(vote~  income + gender + race + educ1 + partyid3 + ideo + race:gender + gender:partyid3, 
-                           data = nes1992_clean, 
-                           family = binomial(link = "logit"))
+glm_1992_inr = glm(vote~  income + gender + race + educ1 + 
+                          partyid3 + ideo + race:gender + gender:partyid3, 
+                          data = nes1992_clean, 
+                          family = binomial(link = "logit"))
 summary(glm_1992_inr)
 par(mfrow = c(2,2))
 plot(glm_1992_inr)
@@ -351,8 +398,11 @@ binnedplot(dlikes_flat, res, xlab = "dlikes")
 Therefore, we tried to add rlikes and dlikes to the model. The following is the model and summary.It appears that both rlikes and dlikes are very significant in the model as the p-values are much less than 0.05
 
 ```{r}
-glm_1992_new = glm(vote~  income + gender + race + educ1 + partyid3 + ideo + race:gender + gender:partyid3+dlikes+rlikes, data = nes1992_clean, 
-                           family = binomial(link = "logit"))
+glm_1992_new = glm(vote~  income + gender + race + educ1 + 
+                          partyid3 + ideo + race:gender + 
+                          gender:partyid3+dlikes+rlikes, 
+                          data = nes1992_clean, 
+                          family = binomial(link = "logit"))
 summary(glm_1992_new)
 par(mfrow = c(2,2))
 plot(glm_1992_new)
@@ -404,8 +454,11 @@ error.rate(pred, true)
 
 16.  For your chosen model, discuss and compare the importance of each input variable in the prediction.   Provide a neatly formatted table of odds ratios  and 95\% confidence intervals.
 ```{r}
-glm_1992_new = glm(vote~  income + gender + race + educ1 + partyid3 + ideo + race:gender + gender:partyid3+dlikes+rlikes, data = nes1992_clean, 
-                           family = binomial(link = "logit")
+glm_1992_new = glm(vote~  income + gender + race + 
+                          educ1 + partyid3 + ideo + 
+                          race:gender + gender:partyid3+dlikes+rlikes, 
+                          data = nes1992_clean, 
+                          family = binomial(link = "logit")
                            )
 
 
@@ -455,27 +508,34 @@ levels(nes1992_na$gender) = list("male" = 1, "female" = 2)
 ##factor race
 nes1992_na$race[which(is.na(nes1992_na$race) == TRUE)] = "na"
 nes1992_na$race = factor(nes1992_na$race)
-levels(nes1992_na$race) = list("white" = "1", "black" = "2", "asian" = "3", "nativea merican" = "4", "hispanic" = "5", "na" = "na")
+levels(nes1992_na$race) = list("white" = "1", "black" = "2", 
+                                "asian" = "3", "nativea merican" = "4", 
+                                "hispanic" = "5", "na" = "na")
 
 ##factor education
 nes1992_na$educ1[which(is.na(nes1992_na$educ1) == TRUE)] = "na"
 nes1992_na$educ1 = factor(nes1992_na$educ1)
-levels(nes1992_na$educ1) = list("no high school" = "1", "high school graduate" = "2", "some college" = "3", "college graduate" = "4", "na" = "na")
+levels(nes1992_na$educ1) = list("no high school" = "1", "high school graduate" = "2",
+                                "some college" = "3", "college graduate" = "4", "na" = "na")
 
 ##factor party identification
 nes1992_na$partyid3[which(is.na(nes1992_na$partyid3) == TRUE)] = "na"
 nes1992_na$partyid3 = factor(nes1992_na$partyid3)
-levels(nes1992_na$partyid3) = list("democraets" = "1", "independents" = "2", "republicans" = "3")
+levels(nes1992_na$partyid3) = list("democraets" = "1", 
+                                   "independents" = "2", 
+                                   "republicans" = "3")
 
 ##political ideology
 nes1992_na$ideo[which(is.na(nes1992_na$ideo) == TRUE)] = "na"
 nes1992_clean$ideo = factor(nes1992_clean$ideo)
-levels(nes1992_clean$ideo) = list("liberal" ="1" , "moderate" = "3", "conservative" = "5", "na" = "na")
+levels(nes1992_clean$ideo) = list("liberal" ="1" , "moderate" = "3", 
+                                  "conservative" = "5", "na" = "na")
 
 ##income
 nes1992_na$income[which(is.na(nes1992_na$income) == TRUE)] = "na"
 nes1992_clean$income = factor(nes1992_clean$income)
-levels(nes1992_clean$income) = list("1" = "1" , "2" = "2", "3" = "3", "4" = "4", "5" = "5", "na" = "na")
+levels(nes1992_clean$income) = list("1" = "1" , "2" = "2", "3" = "3", 
+                                    "4" = "4", "5" = "5", "na" = "na")
 
 
 dim(nes1992)
@@ -492,9 +552,11 @@ ANSWER: One of the reason for the missing values is that people do not want othe
 20.  Rerun your selected model and create a table of parameter estimates and confidence intervals for the odds ratios.  You should have an additional coefficient for any categorical variable with missing data.   Comment on any changes in results for the model including the missing data and the previous one that used only complete data.
 ```{r}
 ##add interaction
-glm_1992_new_na = glm(vote~  income + gender + race + educ1 + partyid3 + ideo + race:gender + gender:partyid3+dlikes+rlikes, data = nes1992_na, 
-                           family = binomial(link = "logit"),
-                           maxit = 100)
+glm_1992_new_na = glm(vote~  income + gender + race + 
+                             educ1 + partyid3 + ideo + race:gender + 
+                             gender:partyid3+dlikes+rlikes, data = nes1992_na, 
+                             family = binomial(link = "logit"),
+                             maxit = 100)
 
 summary(glm_1992_new_na)
 
