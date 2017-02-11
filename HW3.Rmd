@@ -80,8 +80,10 @@ ANSWER: We have that the odds ratio is equal to $e^{\beta_1 (5-1)}= e^{4\beta_1}
 
 ```{r}
 a<-confint(vote.glm1)
-or.conf<-exp(4*a[2,])
-suppressMessages(print(or.conf))
+cf = exp(4*coef(vote.glm1)[2])
+or.conf = exp(4*a[2,])
+t = cbind(cf, t(or.conf))
+suppressMessages(print(t))
 ```
 
 With 95\% confidence, the odds for a rich person (income=5) to vote Republican (relative to the odds for a poor person (inc=1) to vote Republican) are contained in the interval $[2.37, 5.78]$.
@@ -392,6 +394,8 @@ plot(glm_1992_new)
 14.  Evaluate and compare the different models you fit.  Consider coefficient estimates (are they stable across models) and standard errors (any indications of identifiability problems), residual plots and deviances.
 ```{r}
 anova(glm_1992_ori,glm_1992_inr, glm_1992_new,test = "Chisq")
+
+
 ```
  
 
@@ -423,17 +427,26 @@ error.rate(pred, true)
 ```
 Comparing the error rates, we can see that glm_1992_new provides the lowest error rate.
 
+
 16.  For your chosen model, discuss and compare the importance of each input variable in the prediction.   Provide a neatly formatted table of odds ratios  and 95\% confidence intervals.
 ```{r}
 glm_1992_new = glm(vote~  income + gender + race + educ1 + partyid3 + ideo + race:gender + gender:partyid3+dlikes+rlikes, data = nes1992_clean, 
-                           family = binomial(link = "logit"),
-                           maxit = 100)
+                           family = binomial(link = "logit")
+                           )
 
 
 ci = cbind(exp(glm_1992_new$coefficients),exp(confint.default(glm_1992_new)))
 colnames(ci) = c("RR", "2.5", "97.5")
 suppressMessages(print(ci))
+
+x = which(nes1992_clean["gender"] == "female")
+y = which(nes1992_clean["race"]=="asian")
+
+intersect(x, y)
+nes1992_clean$vote[intersect(x, y)]
 ```
+In general, the bigger the odds ratio is, the more importance the corresponding variable will be. In our model, partyid3 republicans, partyid3independents,ideoconservative and genderfemale:racehispanic  are important variable. One extreme case  
+is genderfemale:raceasian. Based on our analysis, the intersects between female category and asian category are only 5 observation who all vote for bush. In this case, it is perfectly classified by it and we need consider constrained logistic regression.  
 
 17.  Provide a paragraph summarizing your findings and interpreting key coefficients (providing ranges of supporting values from above) in terms of the odds of voting for Bush.  Attempt to write this at a level that readers of the New York Times Upshot column could understand. 
 
