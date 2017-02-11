@@ -176,7 +176,6 @@ nes52.2000 = nes %>% filter(!is.na(black)) %>%
 
 ```{r}
 
-## MDR: new version that  avoids growing arrays
 yr <- unique(nes52.2000$year)
 OR<-data.frame(year=yr, est=numeric(length(yr)), CI.lwr=numeric(length(yr)),CI.upr=numeric(length(yr)) )
 inc.indiv<-rep(0,length(yr)) # used for question 9
@@ -190,27 +189,6 @@ inc.indiv[i]<-rep$coefficients[2]
 intercept.store[i]<-rep$coefficients[1]
 }
 print(round(OR,2))
-
-# old version:
-# yr <- unique(year)
-# intercept.store <- NULL
-# inc.indiv <- NULL
-# odds.ci <- NULL
-# x.store <- NULL
-# for (i in 1:length(yr)) {
-# rep <- glm(vote ~ income, data=nes52.2000, family=binomial(link="logit"), subset=year==yr[i])
-# intercept <- rep$coefficients[1]
-# inc <- rep$coefficients[2]
-# rep.ci <- suppressMessages(confint(rep))
-# odds <- exp(4*rep.ci[2,])
-# x <- model.matrix(rep)
-# x.store <- rbind(x.store, x, deparse.level = 0)
-# intercept.store <- rbind(intercept.store, intercept)
-# inc.indiv <- rbind(inc.indiv, inc, deparse.level = 0)
-# odds.ci <- rbind(odds.ci, odds, deparse.level = 0)
-# }
-# odds.ci
-
 ```
 
 
@@ -224,12 +202,6 @@ print(round(OR,2))
 p<-ggplot(OR, aes(x=year, y=est)) +geom_point()+  geom_errorbar(aes(ymin=CI.lwr, ymax=CI.upr), width=.1)
 p<-p+xlab("Year") + ylab("Odds ratio (95%-CI)")+ylim(0,10) + geom_hline(yintercept=c(1), linetype="dotted")
 plot(p)
-
-# old version
-# plot(rep(yr, 2), odds.ci, xlim=c(1952,2000), ylab="Confidence Intervals", xlab="Year", pch = 20, col="firebrick")
-# for (i in 1:length(yr)){
-#   lines(rep(yr[i],2), c(odds.ci[i,1], odds.ci[i,2]), col="firebrick")
-# }
 ```
 
 9. Fit a logistic regression using income and year as a factor  with an interaction i.e. `income*factor(year)` to the data from 1952-2000.  Find the log odds ratio for income for each year by combining parameter estimates and show that these are the same as in the respective individual logistic regression models fit separately to the data for each year.
@@ -255,7 +227,8 @@ As shown above, the log odds ratios for income are exactly the same generated fr
 x<-seq(from=1, to=5, by=.05)
 
 M<-data.frame(xx=x, prob.smooth=invlogit(intercept.store[1]+inc.indiv[1]*x))
-fig2<-ggplot(M, aes(x=xx, y=prob.smooth))+geom_line(aes(y = prob.smooth))+geom_point(data=nes52.2000, aes(x=income, y=1*vote), color="hotpink", size=.25, position = position_jitter(width = 0.25, height = .1))+labs(x="Income", y="Pr(Republican vote)")+scale_x_continuous(breaks=c(1,2,3,4,5))
+
+fig2<-ggplot(M, aes(x=xx, y=prob.smooth), color = year)+geom_line(aes(y = prob.smooth))+geom_point(data=nes52.2000, aes(x=income, y=1*vote), color="hotpink", size=.25, position = position_jitter(width = 0.25, height = .1))+labs(x="Income", y="Pr(Republican vote)")
 
 rep <- glm(vote ~ income, data=nes52.2000, family=binomial(link="logit"), subset=year==yr[1])
 rep.sim <- sim(rep)
@@ -279,21 +252,12 @@ for(k in 1:20) {
   M3<-data.frame(xx=x, prob.smooth=invlogit(rep.sim@coef[k,1]+rep.sim@coef[k,2]*x))
 
   fig2<-fig2+geom_line(data=M3,aes(y = prob.smooth), color=13, size=.25, linetype=3)
-  }
+}
+fig2<-fig2+scale_fill_discrete(name = "Years", labels=c(yr[1], yr[2], yr[3], yr[4], yr[5], yr[6], yr[7], yr[8], yr[9], yr[10], yr[11], yr[12], yr[13]))
 
 par(mfrow=c(2,2)) 
 
 plot(fig2)
-#old code:
-#curve (invlogit(intercept.store[1] + inc.indiv[1]*x), 1, 5, ylim=c(0,1),
- #        xlim=c(1,5), ylab="Pr (Republican vote)", xlab="Income", lwd=1, #col=21)
-#for (i in 2:length(yr)) {
-#curve (invlogit(intercept.store[i] + inc.indiv[i]*x), 1, 5, ylim=c(0,1),
- #        xlim=c(1,5), ylab="Pr (Republican vote)", xlab="Income", lwd=1, #col=i+20, add=T)
-#}
-#  mtext ("(poor)", 1, 1.5, at=1, adj=.5)
-#  mtext ("(rich)", 1, 1.5, at=5, adj=.5)
-#  points (jitter (income, 1), jitter (as.numeric(vote), 1), pch=20, cex=.15, #col=alpha("hotpink", .25))
 ```
 *Used code from Gelman & Hill Figure 5.1 as guidance.
 
